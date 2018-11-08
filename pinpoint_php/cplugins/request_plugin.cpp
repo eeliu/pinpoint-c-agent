@@ -121,7 +121,7 @@ void PhpRequestInterceptor::onBefore(uint64_t callId,
     // add proxy header checking
     if(!PINPOINT_G(proxy_headers))
     {
-    	return ;
+        return ;
     }
 
     TracePtr tracePtr = Trace::getCurrentTrace();

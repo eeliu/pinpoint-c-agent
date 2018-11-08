@@ -253,30 +253,30 @@ std::string get_rpc()
 void  php_getcwd(std::string& path)
 {
 
-	char _path[PATH_MAX] = {0};
-	char *ret=NULL;
+    char _path[PATH_MAX] = {0};
+    char *ret=NULL;
 
 #if HAVE_GETCWD
-	ret = VCWD_GETCWD(_path, PATH_MAX);
+    ret = VCWD_GETCWD(_path, PATH_MAX);
 #elif HAVE_GETWD
-	ret = VCWD_GETWD(_path);
+    ret = VCWD_GETWD(_path);
 #endif
 
-	path = ret;
+    path = ret;
 }
 
 int file_exist_and_readable(std::string& fullName)
 {
-	 struct stat info;
-	 if(stat(fullName.c_str(),&info) == -1 )
-	 {
+     struct stat info;
+     if(stat(fullName.c_str(),&info) == -1 )
+     {
 
-	 }else if( S_ISREG( info.st_mode) && (info.st_mode& S_IRUSR ))
-	 {
-		 return 0;
-	 }
+     }else if( S_ISREG( info.st_mode) && (info.st_mode& S_IRUSR ))
+     {
+         return 0;
+     }
 
-	 return -1 ;
+     return -1 ;
 }
 
 bool get_proxy_http_header(std::string &value,int& type)
@@ -429,10 +429,10 @@ std::string path_join(std::string _dir, std::string fileName)
 #if 0
     if(dir.is_relative())
     {
-    	std::string cur;
-    	php_getcwd(cur);
-    	fs::path curDir(cur);
-    	dir = (curDir/= _dir);
+        std::string cur;
+        php_getcwd(cur);
+        fs::path curDir(cur);
+        dir = (curDir/= _dir);
     }
 #endif
     dir /= fileName;
@@ -651,11 +651,11 @@ int init_pinpoint_agent()
 
     PINPOINT_ASSERT_RETURN (agentPtr != NULL,FAILED);
 
-	Pinpoint::Agent::PinpointAgentContextPtr& contextPtr = Pinpoint::Agent::PinpointAgentContext::getContextPtr();
+    Pinpoint::Agent::PinpointAgentContextPtr& contextPtr = Pinpoint::Agent::PinpointAgentContext::getContextPtr();
 
-	contextPtr->ip = get_host_process_info(Pinpoint::Naming::SERVER_ADDR);
-	contextPtr->ports = get_host_process_info(Pinpoint::Naming::SERVER_PORT);
-	contextPtr->hostname = get_host_process_info(Pinpoint::Naming::HTTP_HOST);
+    contextPtr->ip = get_host_process_info(Pinpoint::Naming::SERVER_ADDR);
+    contextPtr->ports = get_host_process_info(Pinpoint::Naming::SERVER_PORT);
+    contextPtr->hostname = get_host_process_info(Pinpoint::Naming::HTTP_HOST);
 
     PluginPtrVector pluginPtrVector;
 
@@ -678,18 +678,18 @@ int init_pinpoint_agent()
         LOGT("c++ plugin count=%d", v1.size());
     }
 
-	get_plugins_by_php(pluginPtrVector);
+    get_plugins_by_php(pluginPtrVector);
 
     LOGT("all plugins count = %d", pluginPtrVector.size());
 
-	err = agentPtr->init(pluginPtrVector);
-	if (err != SUCCESS)
-	{
-		LOGE("init Agent failed!");
-		return FAILED;
-	}
+    err = agentPtr->init(pluginPtrVector);
+    if (err != SUCCESS)
+    {
+        LOGE("init Agent failed!");
+        return FAILED;
+    }
 
-	return SUCCESS;
+    return SUCCESS;
 }
 
 

@@ -60,8 +60,8 @@ typedef struct _per_reqeust_state_{
 ZEND_BEGIN_MODULE_GLOBALS(pinpoint)
     zend_bool module_enable;
     zend_bool trace_exception;
-	zend_bool unittest;
-	zend_bool proxy_headers;
+    zend_bool unittest;
+    zend_bool proxy_headers;
 //    char* configFileName;
     char* pluginsRootPath;
     char pluginsAbsolutePath[MAXPATHLEN];

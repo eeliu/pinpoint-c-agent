@@ -49,10 +49,10 @@
 #define PP_U_TRACE(msg,...) (PINPOINT_G(unittest)?(fprintf(stderr,"%*s" msg"\n",PINPOINT_G(prs).stackDepth*2,"",##__VA_ARGS__)):(0));
 
 #define PP_TRACE(msg,...)\
-		do{\
-			PP_U_TRACE(msg,##__VA_ARGS__);\
-			LOGT(msg,##__VA_ARGS__);\
-		}while(0)
+        do{\
+            PP_U_TRACE(msg,##__VA_ARGS__);\
+            LOGT(msg,##__VA_ARGS__);\
+        }while(0)
 
 
 using Pinpoint::Naming::eName;

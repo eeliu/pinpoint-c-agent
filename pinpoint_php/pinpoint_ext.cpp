@@ -371,7 +371,7 @@ PHP_RINIT_FUNCTION(pinpoint)
 
         if(init_pinpoint_agent() != SUCCESS)
         {
-        	return -1;
+            return -1;
         }
 
         if( PINPOINT_G(unittest) == 0) // unittest not enable
@@ -420,7 +420,7 @@ static void load_php_interface_plugins()
         LOGW("------ %s can't read it ---------------------",p.c_str());
         LOGW("------------------------------------------------------------------------------------------------------------------------------------");
         LOGW("\n\n");
-    	return ;
+        return ;
     }
 
 #if PHP_VERSION_ID < 50400
