@@ -487,11 +487,6 @@ PHP_MINIT_FUNCTION(pinpoint_php)
     old_error_cb = zend_error_cb;
     zend_error_cb = apm_error_cb;
 
-    if(register_shared_obj_address())
-    {
-        init_shared_obj();
-    }
-
     PPG(agent_info).start_time = get_current_msec_stamp();
 
     return SUCCESS;
@@ -685,12 +680,12 @@ int recv_msg_from_collector(TransLayer *t_layer)
     }
     return 0;
 }
-
+//#define gettid() syscall(SYS_gettid)
 
 int pp_trace(const char *format,...)
 {
     // insert more info
-    int n = snprintf(&PPG(logBuffer)[0],LOG_SIZE,"[%d] ",getpid());
+    int n = snprintf(&PPG(logBuffer)[0],LOG_SIZE,"[%d:%ld] ",getpid());
     //
     va_list ap;
     va_start(ap, format);
@@ -714,17 +709,13 @@ int connect_unix_remote(const char* remote)
     struct sockaddr_un u_sock = {0};
     if((fd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
     {
+        pp_trace("get socket error,(%s)",strerror(errno));
         goto ERROR;
     }
 
     u_sock.sun_family = AF_UNIX;
     sprintf(u_sock.sun_path, "agent:%d", getpid());
     len = offsetof(struct sockaddr_un, sun_path) + strlen(u_sock.sun_path);
-    if(bind(fd, (struct sockaddr *)&u_sock, len) < 0)
-    {
-        goto ERROR;
-    }
-    unlink(u_sock.sun_path);
 
     memset(&u_sock, 0, sizeof(u_sock));
     u_sock.sun_family = AF_UNIX;
@@ -893,14 +884,16 @@ uint64_t generate_unique_id()
 {
     if(PPG(shared_obj).region == NULL)
     {
-        return 0L;
+        if(register_shared_obj_address() && init_shared_obj())
+        {
+        }else{
+            return 0L;
+        }
     }
-    else
-    {
-        uint64_t* value =  (uint64_t*)((char*)PPG(shared_obj).region + UNIQUE_ID_OFFSET);
-        __sync_fetch_and_add(value,1);
-        return *value;
-    }
+
+    uint64_t* value =  (uint64_t*)((char*)PPG(shared_obj).region + UNIQUE_ID_OFFSET);
+    __sync_fetch_and_add(value,1);
+    return *value;
 }
 
 uint64_t get_current_msec_stamp()
