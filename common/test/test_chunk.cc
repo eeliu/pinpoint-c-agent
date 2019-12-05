@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "Chunk.h"
 #include "json/json.h"
+#include "pinpoint_helper.h"
 using namespace testing;
 
 
@@ -20,7 +20,7 @@ static int checkData(const void* buf,uint length,void* dst)
 }
 
 
-TEST(chunk, all_in_one)
+TEST(test, chunk)
 {
     Chunks chunks(1024*4,128);
     std::string out,ret;
@@ -38,7 +38,7 @@ TEST(chunk, all_in_one)
     out.append(buf3,1024);
 
     // in and out
-    chunks.drainOutWithPipe(std::bind(&checkData,std::placeholders::_1,std::placeholders::_2,&ret));
+    chunks.drainOutWithPipe(checkData,&ret);
 
     EXPECT_TRUE(ret == out);
 
@@ -58,7 +58,7 @@ TEST(chunk, all_in_one)
     out.append(buf3,1024);
 
     ret.clear();
-    chunks.drainOutWithPipe(std::bind(&checkData,std::placeholders::_1,std::placeholders::_2,&ret));
+    chunks.drainOutWithPipe(checkData,&ret);
     EXPECT_TRUE(chunks.getAllocSize() == 0);
     EXPECT_TRUE(ret == out);
 }
