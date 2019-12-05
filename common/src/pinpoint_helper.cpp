@@ -179,7 +179,7 @@ Chunks::~Chunks()
 
 bool Chunks::useExistChunk(uint length)
 {
-    Chunk * c = NULL;
+    Chunk * c = nullptr;
     if(!this->ready_list.empty())
     {
         c = this->ready_list.back();
