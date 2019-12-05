@@ -19,14 +19,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#ifdef __linux__
-#define likely(x)        __builtin_expect(!!(x), 1)
-#define unlikely(x)      __builtin_expect(!!(x), 0)
-#elif _WIN32
-#else
-
-#endif
-
 //fix #129
 #ifndef uint
 #define uint unsigned int
@@ -37,6 +29,7 @@
 #define IN_MSG_BUF_SIZE 4096
 #define NAMING_SIZE 128
 #define PHP 1500
+
 
 typedef enum{
     RESPONSE_AGENT_INFO = 0,
@@ -50,56 +43,133 @@ typedef  struct {
 }Header;
 #pragma pack ()
 
+
+typedef struct trans_layer_t TransLayer;
+typedef int  (*TransHandleCB)(TransLayer*);
+
+class Chunks;
+
+typedef struct trans_layer_t{
+    int           c_fd;      // collector fd, use to send data;
+    Chunks*        chunks; // A fixed size for span [0,MAX_VEC]
+    TransHandleCB socket_read_cb;
+    TransHandleCB socket_write_cb;
+    char           in_buf[IN_MSG_BUF_SIZE];
+}TransLayer;
+
 typedef struct collector_agent_s{
     uint64_t start_time;
     char*   appid;
     char*   appname;
 }CollectorAgentInfo;
 
-#define LOG_SIZE 4096
+enum E_ANGET_STATUS{
+    E_OFFLINE= 0,
+    E_TRACE_PASS,
+    E_TRACE_BLOCK
+};
 
-typedef struct pp_agent_s{
-    const char* co_host; // tcp:ip:port should support dns
-    uint  timeout_ms;
-    int   trace_limit;
-    int   agent_type;
-    uint8_t debug_report;
-}PPAgentT;
+enum E_SHM_OFFSET{
+    UNIQUE_ID_OFFSET = 0,
+    TRACE_LIMIT= 8,
+};
 
-typedef void(*log_error_cb)(char*);
-void register_error_cb(log_error_cb error_cb);
+
 void pp_trace(const char *format,...);
 
-/**
- *pinpoint_start_trace
- *pinpoint_end_trace
- *pinpoint_add_clue
- *pinpoint_add_clues
- *pinpoint_unique_id
- *pinpoint_tracelimit $timestamp
- *pinpoint_drop_trace
- *pinpoint_app_name
- *pinpoint_app_id
- *pinpoint_start_time
- */
-#ifdef __cplusplus 
-extern "C"{
-#endif
-extern PPAgentT global_agent_info;
 
-int32_t pinpoint_start_trace();
-int32_t pinpoint_end_trace();
-void pinpoint_add_clues(const  char* key,const  char* value);
-void pinpoint_add_clue(const  char* key,const  char* value);
-bool check_tracelimit(int64_t timestamp);
-int64_t generate_unique_id();
-void pinpoint_drop_trace();
-const char* pinpoint_app_id();
-const char* pinpoint_app_name();
-uint64_t pinpoint_start_time();
-void test_trace();
-void catch_error(const char* msg,const char* error_filename,uint error_lineno);
-#ifdef __cplusplus 
-}
-#endif
+//typedef struct list{
+//
+//    void *value;
+//
+//    struct list* next;
+//    struct list* pre;
+//    int size;
+//}Node;
+//
+//inline void init_list(Node* list)
+//{
+//    list->value = NULL;
+//    list->pre = list->next = list;
+//    list->size = 0;
+//}
+//
+//inline int is_bottom(Node* list)
+//{
+//    return ( list->next == list ) ? (1):(0);
+//}
+//
+//inline void* get_top(Node* list)
+//{
+//    return list->pre->value;
+//}
+//
+//inline uint get_size(Node* list)
+//{
+//    return (uint)list->size;
+//}
+//
+//inline int is_empty(Node* list)
+//{
+//    return list->size == 0;
+//}
+//
+//inline Node* push_back(Node *list)
+//{
+//    if(is_empty(list))
+//    {
+//        list->size++;
+//        return list;
+//    }
+//
+//    Node* node = (Node*)malloc(sizeof(Node));
+//    if(node){
+//
+//        Node* last = list->pre;
+//
+//        /// [last] ->  <- [node]
+//        last->next = node;
+//        node->pre  = last;
+//
+//        ///    [node] ->  <- [list]
+//        list->pre  = node;
+//        node->next = list;
+//
+//        node->value = NULL;
+//        list->size++;
+//    }
+//    return node;
+//}
+//
+//inline void* pop_back(Node*list)
+//{
+//
+//    if(is_empty(list) ) // empty
+//    {
+//        return NULL;
+//    }
+//    else
+//    {
+//        void* value = NULL;
+//
+//        if(list->next == list)
+//        {
+//            value = list->value;
+//            list->value = NULL;
+//        }
+//        else
+//        {
+//            Node* last = list->pre;
+//            Node* pre  = last->pre;
+//            list->pre = pre;
+//            pre->next = list;
+//            value = last->value;
+//            free(last);
+//        }
+//
+//        list->size--;
+//        return value;
+//    }
+//}
+
 #endif /* COMMON_H_ */
