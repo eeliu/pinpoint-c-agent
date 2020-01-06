@@ -1,8 +1,5 @@
-#include <windows.h>
-#include <iostream>
-#include <string>
-#include <cstring>
 #include <gtest/gtest.h>
+#include "SharedObj.h"
 using namespace testing;
 using namespace std;
 
@@ -42,5 +39,24 @@ TEST(test, shm)
 
 TEST(test, create_and_use_the_shared_mem)
 {
-    
+//create the tmpfile
+    if(!checking_and_init()){
+        EXPECT_TRUE(0)<<"failed to init shared_obj";
+    }
+
+    char* address = (char*)fetch_shared_obj_addr();
+
+    strcpy(address,"hello pinpoint");
+    detach_shared_obj();
+// fork a child to check result
+    pid_t pid =fork();
+    if(pid == 0){
+        if(!checking_and_init()){
+               EXPECT_TRUE(0)<<"failed to init shared_obj";
+        }
+        char* address = (char*)fetch_shared_obj_addr();
+        EXPECT_STREQ(address,"hello pinpoint");
+        detach_shared_obj();
+        exit(0);
+    }
 }

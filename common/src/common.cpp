@@ -4,8 +4,19 @@
 
 #include <stdarg.h>
 #include <cstdio>
-#include <processthreadsapi.h>
+
 #include "common.h"
+
+#ifdef __linux__
+#include <sys/types.h>
+#include <unistd.h>
+#define getOSPid getpid
+#elif _WIN32
+#include <processthreadsapi.h>
+#define getOSPid GetCurrentProcessId
+#else
+#error "not support"
+#endif
 
 typedef void(*log_error_cb)(const char*);
 typedef struct Logger_s{
@@ -17,7 +28,8 @@ static Logger_t logger;
 
 void pp_trace(const char *format,...)
 {
-    int n = snprintf(&logger.logBuffer[0],LOG_SIZE,"[%ld] ",GetCurrentProcessId());
+
+    int n = snprintf(&logger.logBuffer[0],LOG_SIZE,"[%d] ",getOSPid());
     va_list ap;
     va_start(ap, format);
     vsnprintf(&logger.logBuffer[n], LOG_SIZE -n ,format, ap);
