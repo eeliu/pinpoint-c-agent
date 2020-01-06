@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.0)
 project(common)
 set(CMAKE_CXX_STANDARD 11)
-include_directories("json/include")
-add_subdirectory(json)
+include_directories("json/include"
+                    "include")
+
 
 # Download and unpack googletest at configure time
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
@@ -36,6 +37,6 @@ if (CMAKE_VERSION VERSION_LESS 2.8.11)
     include_directories("${gtest_SOURCE_DIR}/include")
 endif()
 
-add_executable(common src/main.cpp)
-target_link_libraries(common jsoncpp gtest_main)
-add_test(NAME example_test COMMAND common)
+add_subdirectory(json)
+add_subdirectory(src)
+add_subdirectory(test)
