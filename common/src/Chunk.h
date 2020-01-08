@@ -27,6 +27,8 @@
 #include <string.h>
 #include <json/json.h>
 #include <assert.h>
+#include<functional>
+#include<iostream>
 
 class TraceNode
 {
@@ -41,6 +43,7 @@ public:
     uint64_t start_time;
 };
 
+class TransLayer;
 
 class Chunks
 {
@@ -99,9 +102,8 @@ public:
     virtual ~Chunks();
 
     int copyDataIntoChunks(const void*data, uint length);
-
-    int drainOutWithPipe(int (*IN_PIPE_CB)(const void*, uint, void* args),
-            void* args);
+    
+    int drainOutWithPipe(std::function<int(const char*, uint)> in_pipe_cb);
 
     void resetChunks();
 

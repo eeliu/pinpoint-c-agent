@@ -13,6 +13,8 @@ simulate/shell/*.html
 .autotools
 .cproject
 .project
+build
+venv
 .settings/
 CI/
 *.txt
