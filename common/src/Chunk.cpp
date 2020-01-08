@@ -19,7 +19,7 @@
  *  Created on: Jul 3, 2019
  *      Author: eeliu
  */
-#include "pinpoint_helper.h"
+#include "Chunk.h"
 
 int Chunks::copyDataIntoReadyList(const void* data, uint length)
 {
@@ -236,8 +236,7 @@ DONE:
 
 }
 
-int Chunks::drainOutWithPipe(int (*IN_PIPE_CB)(const void*, uint, void* args),
-        void* args)
+int Chunks::drainOutWithPipe(std::function<int(const char*, uint)> in_pipe_cb)
 {
     if (this->ready_list.empty())
     {
@@ -251,7 +250,7 @@ int Chunks::drainOutWithPipe(int (*IN_PIPE_CB)(const void*, uint, void* args),
         char* cur_buf = &cur->data[cur->l_ofs];
         uint cur_size = cur->r_ofs - cur->l_ofs;
         //  ret is used size
-        int ret = IN_PIPE_CB(cur_buf, cur_size, args);
+        int ret = in_pipe_cb(cur_buf, cur_size);
         if (ret <= 0)
         {
             return ret;
