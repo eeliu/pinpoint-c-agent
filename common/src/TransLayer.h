@@ -47,109 +47,17 @@ explicit TransLayer(const char* co_host,uint w_timeout_ms):
     {
     }
 
-    size_t trans_layer_pool()
+    void registerPeerMsgCallback(std::function<void(int type,const char* buf,size_t len)> _peerMsgCallback)
     {
-        if(c_fd  == -1 )
-        {
-            connect_remote(co_host);
-            if(c_fd == -1)
-            {
-                return -1;
-            }
+        if(_peerMsgCallback){
+            this->peerMsgCallback = _peerMsgCallback;
         }
-        int fd = c_fd;
-        fd_set wfds,efds,rfds;
-        FD_ZERO(&wfds);
-        FD_ZERO(&efds);
-        FD_ZERO(&rfds);
-        FD_SET(fd,&wfds);
-        FD_SET(fd,&efds);
-        FD_SET(fd,&rfds);
-
-        struct timeval tv = {0,w_timeout_ms *1000};
-
-        int retval = select(fd+1,&rfds,&wfds,&efds,&tv);
-        if(retval == -1)
-        {
-            //pp_trace("select return error:(%s)",strerror(errno));
-            return -1;
-        }else if(retval >0 ){
-
-            if(FD_ISSET(fd,&efds)){
-                pp_trace("select fd:(%s) ",strerror(errno));
-                goto ERROR;
-            }
-
-            if(FD_ISSET(fd,&wfds)){
-                if(send_msg_to_collector() == -1){
-                    goto ERROR;
-                }
-            }
-
-            if(FD_ISSET(fd,&rfds)){
-                if(recv_msg_from_collector() == -1){
-                    goto ERROR;
-                }
-            }
-        }else{
-            // timeout do nothing
-            // total =0  ,timeout
-        }
-
-        return 0;
-
-ERROR:
-
-        reset_remote();
-        // TODO share the offline
-        // agent.limit = E_OFFLINE;
-
-        connect_remote(co_host);
     }
+    size_t trans_layer_pool();
     
 private:
-    int connect_unix_remote(const char* remote)
-    {
-        int fd = -1,len = -1;
-        struct sockaddr_un u_sock = {0};
-        if((fd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
-        {
-            pp_trace(" get socket error,(%s)",strerror(errno));
-            goto ERROR;
-        }
-
-        // u_sock.sun_family = AF_UNIX;
-        // sprintf(u_sock.sun_path, "agent:%d", getpid());
-        // len = offsetof(struct sockaddr_un, sun_path) + strlen(u_sock.sun_path);
-
-        memset(&u_sock, 0, sizeof(u_sock));
-        u_sock.sun_family = AF_UNIX;
-        strncpy(u_sock.sun_path,remote,sizeof(u_sock.sun_path) -1);
-        len =  offsetof(struct sockaddr_un, sun_path) + strlen(u_sock.sun_path);
-
-        // mark fd as non blocking
-        fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
-
-        if(connect(fd,(struct sockaddr *)&u_sock, len) != 0)
-        {
-            if( errno != EALREADY || errno !=  EINPROGRESS )
-            {
-                pp_trace("connect:(%s) failed as (%s)",remote,strerror(errno));
-                goto ERROR;
-            }
-        }
-        pp_trace("connect to %s",remote);
-
-        return fd;
-
-    ERROR:
-        if(fd > 0)
-        {
-            close(fd);
-        }
-
-        return -1;
-    }
+    int connect_unix_remote(const char* remote);
+   
 
     int connect_remote(const char* statement)
     {
@@ -165,7 +73,7 @@ private:
         if( substring == statement )
         {
             // sizeof = len +1, so substring -> /tmp/collector.sock
-            substring = substring + sizeof(UNIX_SOCKET) - 1;
+            substring = substring + strlen(UNIX_SOCKET);
             fd = connect_unix_remote(substring);
             c_fd = fd;
             goto DONE;
@@ -175,6 +83,7 @@ private:
 
         ///  udp
 
+        pp_trace("remote is not valid:%s",statement);
     DONE:
         /// Add  whoamI info
 
@@ -190,6 +99,7 @@ private:
     {
         if(c_fd > 0)
         {
+            pp_trace("reset peer:%d",c_fd);
             close(c_fd);
             c_fd = -1;
         }
@@ -267,14 +177,19 @@ private:
             }
 
             uint type = ntohl(header->type);
-            switch(type){
-            case RESPONSE_AGENT_INFO:
-            // TODO add agent_info update
-                // handle_agent_info(RESPONSE_AGENT_INFO, buf+8,len - 8);
-                break;
-            default:
-                pp_trace("unsupport type:%d",type);
+            if(peerMsgCallback)
+            {
+                peerMsgCallback(type, buf+8,len - 8);
             }
+
+            // switch(type){
+            // case RESPONSE_AGENT_INFO:
+            // // TODO add agent_info update
+            //     // handle_agent_info(RESPONSE_AGENT_INFO, buf+8,len - 8);
+            //     break;
+            // default:
+            //     pp_trace("unsupport type:%d",type);
+            // }
 
             offset += (8 +body_len );
 
@@ -289,6 +204,7 @@ private:
     uint          w_timeout_ms;
     char          in_buf[IN_MSG_BUF_SIZE]= {0};
     std::function<void(int)> stateChangeCallBack;
+    std::function<void(int type,const char* buf,size_t len)> peerMsgCallback;
 public:
     int           c_fd;
 };

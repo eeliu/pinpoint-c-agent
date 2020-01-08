@@ -38,7 +38,7 @@ TEST(test, create_and_use_the_shared_mem)
         exit(0);
     }
 
-    waitpid(pid,NULL,NULL);
+    waitpid(pid,NULL,0);
     shm_unlink("pinpoint-php.shm");
 }
 
