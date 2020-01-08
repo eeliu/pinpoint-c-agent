@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.0)
 project(common)
 set(CMAKE_CXX_STANDARD 11)
 include_directories("json/include"
-                    "include")
+                    "include"
+                    "src")
 
 
 # Download and unpack googletest at configure time

@@ -2,13 +2,13 @@
 // Created by Bluse on 12/8/2019.
 //
 
-#include "SharedObj.h"
 #include <string.h>
 #include <assert.h>
+#include "SharedObj.h"
 
 
 #ifdef __linux__
-#define SHARE_OBJ_NAME "/dev/shm/pinpoint-php.shm"
+#define SHARE_OBJ_NAME "pinpoint-php.shm"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -19,7 +19,7 @@
 #include <sys/mman.h>
 
 typedef struct shared_object_s{
-    int      sha_fd;
+    // int    shm_fd;
     void*  region;
     int     length;
     const char *address;
@@ -32,7 +32,7 @@ bool pre_init_shared_object()
 {
     object.address = SHARE_OBJ_NAME;
     mode_t mode = S_IRUSR |S_IWUSR|S_IRGRP|S_IWGRP;
-    int fd = open(object.address,O_WRONLY | O_CREAT,mode);
+    int fd = shm_open(object.address,O_WRONLY | O_CREAT,mode);
     if( fd == -1)
     {
         pp_trace("%s: open address with:%s \n",__FUNCTION__,strerror(errno));
@@ -60,7 +60,7 @@ bool init_shared_obj()
         return true;
     }
 
-    int fd = open(object.address,O_RDWR);
+    int fd = shm_open(object.address,O_RDWR,S_IRUSR |S_IWUSR|S_IRGRP|S_IWGRP);
     if(fd == -1)
     {
         pp_trace("attach file:[%s] with:[%s]",object.address,strerror(errno));
@@ -84,7 +84,6 @@ bool init_shared_obj()
     object.length = length;
     close(fd);
     return true;
-
 }
 
 void detach_shared_obj()
