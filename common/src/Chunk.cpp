@@ -206,7 +206,6 @@ int Chunks::copyDataIntoChunks(const void*data, uint length)
         return length;
     }
 
-
     const char* p_in = (const char*) data;
     int ret = 0;
 

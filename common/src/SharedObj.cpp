@@ -48,6 +48,7 @@ bool pre_init_shared_object()
         int64_t pagesize = sysconf(_SC_PAGESIZE);
         ftruncate(fd,pagesize);
     }
+    
     close(fd);
 
     return true;
@@ -79,7 +80,8 @@ bool init_shared_obj()
         pp_trace("mmap file:[%s] with:[%s]",object.address,strerror(errno));
         return false;
     }
-
+    // start with zero
+    memset(addr,0,length);
     object.region = addr;
     object.length = length;
     close(fd);
@@ -171,6 +173,7 @@ void detach_shared_obj()
 
 void* fetch_shared_obj_addr()
 {
+    assert(object.region);
     return object.region;
 }
 
@@ -183,8 +186,10 @@ int  fetch_shared_obj_length()
 
 bool checking_and_init()
 {
-    if(object.region == NULL){
-        if(pre_init_shared_object() && init_shared_obj()){
+    if(object.region == NULL)
+    {
+        if(pre_init_shared_object() && init_shared_obj())
+        {
             return true;
         }else{
             return false;
