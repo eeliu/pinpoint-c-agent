@@ -11,8 +11,8 @@
 extern "C"{
 #endif
 
-bool init_shared_obj();
-bool register_shared_obj_address();
+// bool pre_init_shared_object();
+// bool init_shared_obj();
 void* fetch_shared_obj_addr();
 int  fetch_shared_obj_length();
 bool checking_and_init();

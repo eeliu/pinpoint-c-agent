@@ -27,7 +27,6 @@
 
 #endif
 
-
 //fix #129
 #ifndef uint
 #define uint unsigned int
@@ -38,7 +37,6 @@
 #define IN_MSG_BUF_SIZE 4096
 #define NAMING_SIZE 128
 #define PHP 1500
-
 
 typedef enum{
     RESPONSE_AGENT_INFO = 0,
@@ -52,35 +50,18 @@ typedef  struct {
 }Header;
 #pragma pack ()
 
-
-
 typedef struct collector_agent_s{
     uint64_t start_time;
     char*   appid;
     char*   appname;
 }CollectorAgentInfo;
 
-enum E_ANGET_STATUS{
-    E_OFFLINE= 0,
-    E_TRACE_PASS,
-    E_TRACE_BLOCK
-};
-
-enum E_SHM_OFFSET{
-    UNIQUE_ID_OFFSET = 0,
-    TRACE_LIMIT= 8,
-};
-
-
-
 #define LOG_SIZE 4096
 
 typedef struct pp_agent_s{
-    char*  co_host; // tcp:ip:port should support dns
-    uint  w_timeout_ms;
-    char limit;
-    int tracelimit;
-    void* trannlayer;
+    const char* co_host; // tcp:ip:port should support dns
+    uint  timeout_ms;
+    int   trace_limit;
 }PPAgentT;
 
 typedef void(*log_error_cb)(const char*);
@@ -100,4 +81,11 @@ void pp_trace(const char *format,...);
  *pinpoint_start_time
  */
 
+int32_t pinpoint_start_trace();
+int32_t pinpoint_end_trace();
+void pinpoint_add_clues(const  char* key,const  char* value);
+void pinpoint_add_clue(const  char* key,const  char* value);
+bool check_tracelimit(int64_t timestamp);
+int64_t generate_unique_id();
+void test_trace();
 #endif /* COMMON_H_ */

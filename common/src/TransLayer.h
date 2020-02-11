@@ -38,12 +38,16 @@ const static char* UNIX_SOCKET = "unix:";
 const static char* TCP_SOCKET = "tcp:";
 
 class TransLayer{
+
+enum E_STATE{S_WRITTING,S_READING};
+
 public:
 explicit TransLayer(const char* co_host,uint w_timeout_ms):
     c_fd(-1),
     co_host(co_host),
     w_timeout_ms(w_timeout_ms),
-    chunks(1024*1024,1024) 
+    _state(S_READING),
+    chunks(1024*1024,1024)
     {
     }
 
@@ -53,9 +57,21 @@ explicit TransLayer(const char* co_host,uint w_timeout_ms):
             this->peerMsgCallback = _peerMsgCallback;
         }
     }
+
     size_t trans_layer_pool();
     
+    void sendMsgToAgent(const std::string &data)
+    {
+        uint32_t len = data.size();
+        if ( this->chunks.copyDataIntoChunks(data.data(),len) != 0)
+        {
+            pp_trace("Send buffer is full. size:[%d]",len);
+            return ;
+        }
+    }
+
 private:
+
     int connect_unix_remote(const char* remote);
    
 
@@ -202,6 +218,7 @@ private:
     Chunks        chunks;
     const char*   co_host;
     uint          w_timeout_ms;
+    E_STATE       _state;
     char          in_buf[IN_MSG_BUF_SIZE]= {0};
     std::function<void(int)> stateChangeCallBack;
     std::function<void(int type,const char* buf,size_t len)> peerMsgCallback;

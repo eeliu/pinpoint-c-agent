@@ -89,7 +89,6 @@ ZEND_DECLARE_MODULE_GLOBALS(pinpoint_php)
 typedef std::stack<TraceNode> Stack;
 
 static int send_msg_to_collector(TransLayer *t_layer);
-static int recv_msg_from_collector(TransLayer *t_layer);
 static int pp_trace(const char *format,...);
 static int connect_unix_remote(const char* remote);
 static int connect_remote(TransLayer* t_layer,const char* statement);
@@ -908,8 +907,7 @@ uint64_t generate_unique_id()
     }
 
     uint64_t* value =  (uint64_t*)((char*)PPG(shared_obj).region + UNIQUE_ID_OFFSET);
-    __sync_fetch_and_add(value,1);
-    return *value;
+    return __sync_add_and_fetch (value,1);
 }
 
 uint64_t get_current_msec_stamp()
