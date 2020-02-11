@@ -12,7 +12,7 @@ using namespace std;
 
 #ifdef __linux__
 
-TEST(test, create_and_use_the_shared_mem)
+TEST(shm, create_and_use_the_shared_mem)
 {
 //create the tmpfile
     if(!checking_and_init())

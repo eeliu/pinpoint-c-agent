@@ -46,19 +46,24 @@ size_t TransLayer::trans_layer_pool()
 {
     if(c_fd  == -1 )
     {
+        pp_trace("agent try to connect:(%s)",co_host);
         connect_remote(co_host);
         if(c_fd == -1)
         {
             return -1;
         }
     }
+    
     int fd = c_fd;
     fd_set wfds,efds,rfds;
-    FD_ZERO(&wfds);
+
     FD_ZERO(&efds);
-    FD_ZERO(&rfds);
-    FD_SET(fd,&wfds);
     FD_SET(fd,&efds);
+
+    FD_ZERO(&wfds);
+    FD_SET(fd,&wfds);
+
+    FD_ZERO(&rfds);
     FD_SET(fd,&rfds);
 
     struct timeval tv = {0,w_timeout_ms *1000};

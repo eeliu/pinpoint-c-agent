@@ -30,21 +30,6 @@
 #include<functional>
 #include<iostream>
 
-class TraceNode
-{
-public:
-    TraceNode(Json::Value& node):
-        node(node)
-    {
-        ancestor_start_time = start_time = 0;
-    }
-    Json::Value &node;
-    uint64_t ancestor_start_time;
-    uint64_t start_time;
-};
-
-class TransLayer;
-
 class Chunks
 {
 
@@ -100,7 +85,10 @@ public:
     Chunks(uint max_size, uint resident_size);
 
     virtual ~Chunks();
-
+    /**
+     * 0 means true
+     * length failed
+     * */
     int copyDataIntoChunks(const void*data, uint length);
     
     int drainOutWithPipe(std::function<int(const char*, uint)> in_pipe_cb);
