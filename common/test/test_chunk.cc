@@ -20,7 +20,7 @@ static int checkData(const void* buf,uint length,void* dst)
 }
 
 
-TEST(test, chunk)
+TEST(chunk, all_in_one)
 {
     Chunks chunks(1024*4,128);
     std::string out,ret;
