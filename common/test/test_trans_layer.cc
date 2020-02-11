@@ -54,7 +54,7 @@ void handle_agent_info(int type,const char* buf,size_t len)
 
 
 
-TEST(test, unix_socket_layer)
+TEST(translayer, unix_socket_layer)
 {
     pid_t pid = fork();
     if(pid == 0){
