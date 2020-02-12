@@ -10,9 +10,9 @@
 #include "common.h"
 #include "TransLayer.h"
 #include "SharedObj.h"
+#include "json/json.h"
 
 static log_error_cb _error_cb;
-extern PPAgentT global_agent_info;
 static uint64_t get_current_msec_stamp();
 const static char* CLUSE="clues";
 
@@ -45,11 +45,12 @@ typedef std::stack<TraceNode> Stack;
 class PerThreadAgent{
 public:
     PerThreadAgent(PPAgentT agent):
-    trace_limit(agent.trace_limit),
-    timeout_ms( agent.timeout_ms),
     co_host(agent.co_host),
+    timeout_ms( agent.timeout_ms),
+    trace_limit(agent.trace_limit),
     start_time(0),
-    translayer(TransLayer(agent.co_host,agent.timeout_ms))
+    translayer(TransLayer(agent.co_host,agent.timeout_ms)),
+    json_writer()
     {
         this->fetal_error_time = 0;
 
@@ -64,6 +65,8 @@ public:
         this->app_name = "";
         this->app_id = "";
         this->limit = E_OFFLINE;
+        json_writer.dropNullPlaceholders();
+        json_writer.omitEndingLineFeed();
         using namespace std::placeholders;
         this->translayer.registerPeerMsgCallback(std::bind(&PerThreadAgent::_handleMsgFromCollector,this,_1,_2,_3));
 
@@ -83,7 +86,7 @@ public:
             {
                 uint64_t timestamp =  get_current_msec_stamp();
                 ancestor.node["E"] = this->fetal_error_time != 0?( this->fetal_error_time - ancestor.start_time) : timestamp - ancestor.start_time;
-                std::string trace = this->writer.write(ancestor.node);
+                std::string trace = this->json_writer.write(ancestor.node);
                 Header header;
                 header.length  = htonl(trace.size());
                 header.type    = htonl(REQ_UPDATE_SPAN);
@@ -132,7 +135,7 @@ public:
             this->translayer.trans_layer_pool();
             TraceNode ancestor(this->root);
             ancestor.node["S"] = timestamp;
-            ancestor.node["FT"]= PHP;
+            ancestor.node["FT"]= global_agent_info.agent_type;
             ancestor.ancestor_start_time = timestamp;
             ancestor.start_time = timestamp;
             this->stack.push(ancestor);
@@ -187,8 +190,14 @@ public:
     {
         time_t ts = (timestamp == -1) ?(timestamp) :(time(NULL));
 
+        if(this->limit == E_OFFLINE)
+        {
+            return true;
+        }
+
         if(this->trace_limit < 0)
         {
+            return false;
         }else if(this->trace_limit == 0)
         {
             return true;
@@ -198,6 +207,7 @@ public:
             __sync_synchronize();
             *this->triger_timestamp = ts;
             *triger = 0 ;
+
         }
         else if(*triger >= this->trace_limit)
         {
@@ -210,6 +220,16 @@ public:
         return false;
     }
 
+    void catchFetalError(const char* msg,const char* error_filename,uint error_lineno)
+    {
+        this->fetal_error_time = get_current_msec_stamp();
+        Json::Value eMsg;
+        eMsg["msg"] = msg;
+        eMsg["file"]  = error_filename;
+        eMsg["line"]  = error_lineno;
+        this->root["ERR"] = eMsg;
+    }
+
     inline void setLimit(E_ANGET_STATUS status )
     {
         this->limit = status;
@@ -220,7 +240,22 @@ public:
         return __sync_fetch_and_add(this->uid,1);
     }
 
-    const char* formatLogging(const char *format,va_list args);
+    char* formatLogging(const char *format,va_list args);
+
+    inline uint64_t getStartTime() const
+    {
+        return this->start_time;
+    }
+
+    inline std::string getAppId() const
+    {
+        return this->app_id;
+    }
+
+    inline std::string getAppName() const
+    {
+        return this->app_name;
+    }
 
 private:
 
@@ -267,12 +302,13 @@ private:
     }
 
 
+
 private:
     const char* co_host; // tcp:ip:port should support dns
     uint  timeout_ms;
     E_ANGET_STATUS  limit;
     const int   trace_limit;
-    int   fetal_error_time;
+    uint64_t   fetal_error_time;
     int64_t * triger_timestamp;
     int64_t*  triger;
     int64_t*  uid;
@@ -283,7 +319,7 @@ private:
     Json::Value root;
     TransLayer translayer;
     Stack stack;
-    Json::FastWriter writer;
+    Json::FastWriter json_writer;
 };
 
 
@@ -353,7 +389,7 @@ void free_agent(void *agent)
 }
 
 
-const char* PerThreadAgent::formatLogging(const char *format,va_list ap)
+char* PerThreadAgent::formatLogging(const char *format,va_list ap)
 {
     char* pstart = this->log_buf;
     int n = snprintf(this->log_buf,LOG_SIZE,"[pinpoint] [%d] ",getOSPid());
@@ -371,6 +407,11 @@ const char* PerThreadAgent::formatLogging(const char *format,va_list ap)
 
 void pp_trace(const char *format,...)
 {
+    if(global_agent_info.debug_report != 1)
+    {
+        return ;
+    }
+
     PerThreadAgent* p_agent = get_agent();
     if(p_agent == NULL)
     {
@@ -378,7 +419,7 @@ void pp_trace(const char *format,...)
     }
     va_list args;
     va_start(args, format);
-    const char* pstart = p_agent->formatLogging(format,args);
+    char* pstart = p_agent->formatLogging(format,args);
     if (_error_cb){
         _error_cb(pstart);
     }else{
@@ -470,6 +511,16 @@ void test_trace()
     p_agent->setLimit(E_TRACE_PASS);
 }
 
+void catch_error(const char* msg,const char* error_filename,uint error_lineno)
+{
+    PerThreadAgent* p_agent = get_agent();
+    if(p_agent == NULL)
+    {
+        return ;
+    }
+    p_agent->catchFetalError(msg,error_filename,error_lineno);
+}
+
 void pinpoint_drop_trace()
 {
     PerThreadAgent* p_agent = get_agent();
@@ -479,3 +530,35 @@ void pinpoint_drop_trace()
     }
     p_agent->setLimit(E_TRACE_BLOCK); 
 }
+
+uint64_t pinpoint_start_time()
+{
+    PerThreadAgent* p_agent = get_agent();
+    if(p_agent == NULL)
+    {
+        return 0;
+    }
+    return p_agent->getStartTime();
+}
+
+const char* pinpoint_app_id()
+{
+    PerThreadAgent* p_agent = get_agent();
+    if(p_agent == NULL)
+    {
+        return "";
+    }
+    return p_agent->getAppId().c_str();
+}
+
+const char* pinpoint_app_name()
+{
+    PerThreadAgent* p_agent = get_agent();
+    if(p_agent == NULL)
+    {
+        return "";
+    }
+    return p_agent->getAppName().c_str();
+}
+
+

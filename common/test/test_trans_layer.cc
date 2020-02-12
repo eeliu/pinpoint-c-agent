@@ -12,7 +12,7 @@ using namespace testing;
 #define unix_socket  "./pinpoint_test.sock"
 bool run = true;
 
-int facke_server()
+int fack_server()
 {
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
     struct sockaddr_un address = {0};
@@ -72,7 +72,7 @@ TEST(translayer, unix_socket_layer)
 {
     pid_t pid = fork();
     if(pid == 0){
-        facke_server();
+        fack_server();
         exit(0);
     }
 

@@ -2,7 +2,7 @@
 
 int TransLayer::connect_unix_remote(const char* remote)
 {
-    int fd = -1,len = -1;
+    int fd = -1;
     struct sockaddr_un u_sock = {0};
     if((fd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
     {
@@ -107,3 +107,6 @@ ERROR:
     connect_remote(co_host);
     return -1;
 }
+
+const char* TransLayer::UNIX_SOCKET="unix:";
+const char* TransLayer::TCP_SOCKET="tcp:";

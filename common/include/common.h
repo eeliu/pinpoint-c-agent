@@ -62,9 +62,11 @@ typedef struct pp_agent_s{
     const char* co_host; // tcp:ip:port should support dns
     uint  timeout_ms;
     int   trace_limit;
+    int   agent_type;
+    uint8_t debug_report;
 }PPAgentT;
 
-typedef void(*log_error_cb)(const char*);
+typedef void(*log_error_cb)(char*);
 void register_error_cb(log_error_cb error_cb);
 void pp_trace(const char *format,...);
 
@@ -80,6 +82,10 @@ void pp_trace(const char *format,...);
  *pinpoint_app_id
  *pinpoint_start_time
  */
+#ifdef __cplusplus 
+extern "C"{
+#endif
+extern PPAgentT global_agent_info;
 
 int32_t pinpoint_start_trace();
 int32_t pinpoint_end_trace();
@@ -88,5 +94,12 @@ void pinpoint_add_clue(const  char* key,const  char* value);
 bool check_tracelimit(int64_t timestamp);
 int64_t generate_unique_id();
 void pinpoint_drop_trace();
+const char* pinpoint_app_id();
+const char* pinpoint_app_name();
+uint64_t pinpoint_start_time();
 void test_trace();
+void catch_error(const char* msg,const char* error_filename,uint error_lineno);
+#ifdef __cplusplus 
+}
+#endif
 #endif /* COMMON_H_ */

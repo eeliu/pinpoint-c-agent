@@ -24,16 +24,15 @@ if test "$PHP_PINPOINT_PHP" != "no"; then
   PHP_REQUIRE_CXX()
   PHP_SUBST(PINPOINT_PHP_SHARED_LIBADD)
   PHP_ADD_LIBRARY(stdc++, 1, PINPOINT_PHP_SHARED_LIBADD)
-  PHP_EVAL_INCLINE("-Idepends/json/include")
+  PHP_EVAL_INCLINE("-Idepends/include")
   AC_DEFINE(HAVE_PINPOINT_PHP, 1, [Whether you have pinpoint])
   
-  JSON_SRC="depends/json/src/json_reader.cpp depends/json/src/json_value.cpp depends/json/src/json_writer.cpp "
-  PINPOINT_SRC=" $JSON_SRC "
  
- 
-  if test "$PHP_EXT_TEST" = "yes"; then
-    AC_DEFINE([HAVE_EXT_TEST],[1],[has ext test])
-  fi
+  PINPOINT_PHP_SHARED_LIBADD="$PINPOINT_PHP_SHARED_LIBADD -Ldepends/lib -l:libpinpoint_common.a -l:libjsoncpp.a"
   
-  PHP_NEW_EXTENSION(pinpoint_php, pinpoint_php.cpp pinpoint_helper.cpp $PINPOINT_SRC, $ext_shared)
+  dnl if test "$PHP_EXT_TEST" = "yes"; then
+  dnl  AC_DEFINE([HAVE_EXT_TEST],[1],[has ext test])
+  dnl fi
+  
+  PHP_NEW_EXTENSION(pinpoint_php, pinpoint_php.cpp, $ext_shared)
 fi
