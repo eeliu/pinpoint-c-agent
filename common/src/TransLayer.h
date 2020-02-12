@@ -34,8 +34,7 @@
 //     char           in_buf[IN_MSG_BUF_SIZE];
 // }TransLayer;
 
-const static char* UNIX_SOCKET = "unix:";
-const static char* TCP_SOCKET = "tcp:";
+
 
 class TransLayer{
 
@@ -43,11 +42,11 @@ enum E_STATE{S_WRITTING,S_READING};
 
 public:
 explicit TransLayer(const char* co_host,uint w_timeout_ms):
-    c_fd(-1),
+    chunks(1024*1024,1024),
     co_host(co_host),
     w_timeout_ms(w_timeout_ms),
     _state(S_READING),
-    chunks(1024*1024,1024)
+    c_fd(-1)
     {
     }
 
@@ -222,6 +221,8 @@ private:
     char          in_buf[IN_MSG_BUF_SIZE]= {0};
     std::function<void(int)> stateChangeCallBack;
     std::function<void(int type,const char* buf,size_t len)> peerMsgCallback;
+    const static char* UNIX_SOCKET;
+    const static char* TCP_SOCKET ;
 public:
     int           c_fd;
 };

@@ -46,7 +46,10 @@ bool pre_init_shared_object()
     if(length == 0)
     {
         int64_t pagesize = sysconf(_SC_PAGESIZE);
-        ftruncate(fd,pagesize);
+        if(ftruncate(fd,pagesize) == -1)
+        {
+            pp_trace("trancate %s failed:%s",SHARE_OBJ_NAME,strerror(errno));
+        }
     }
     
     close(fd);

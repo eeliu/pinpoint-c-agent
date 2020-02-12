@@ -18,8 +18,6 @@
 
 #include "common.h"
 #include "config.h"
-//#include "pinpoint_helper.h"
-#include <json/json.h>
 
 extern zend_module_entry pinpoint_php_module_entry;
 #define phpext_pinpoint_php_ptr &pinpoint_php_module_entry
@@ -39,83 +37,13 @@ extern zend_module_entry pinpoint_php_module_entry;
 #include "TSRM.h"
 #endif
 
-///todo
-/// # must be null every request
-///     root_value, cur_value
-///
-
-
-#define MAX_VEC 512
-#define LOG_SIZE 4096
-#define IN_MSG_BUF_SIZE 4096
-#define NAMING_SIZE 128
-#define PHP 1500
-#define SOBJ_ADDRESS "/dev/shm/pinpoint-php.shm"
-
-typedef enum{
-    RESPONSE_AGENT_INFO = 0,
-    REQ_UPDATE_SPAN = 1
-}MSG_TYPE;
-
-typedef struct{
-    uint type;
-    uint length;
-}__attribute__((aligned(1))) Header;
-
-
-
-typedef struct trans_layer_t TransLayer;
-typedef int  (*TransHandleCB)(TransLayer*);
-
-class Chunks;
-
-typedef struct trans_layer_t{
-    int           c_fd;      // collector fd, use to send data;
-    Chunks*        chunks; // A fixed size for span [0,MAX_VEC]
-    TransHandleCB socket_read_cb;
-    TransHandleCB socket_write_cb;
-    char           in_buf[IN_MSG_BUF_SIZE];
-}TransLayer;
-
-
-typedef struct collector_agent_s{
-    uint64_t start_time;
-    char*   appid;
-    char*   appname;
-}CollectorAgentInfo;
-
-typedef struct shared_object_s{
-    void* region;
-    int length;
-    char  address[NAMING_SIZE];
-}SharedObject_T;
-
-enum E_ANGET_STATUS{
-    E_OFFLINE= 0,
-    E_TRACE_PASS,
-    E_TRACE_BLOCK
-};
-
-enum E_SHM_OFFSET{
-    UNIQUE_ID_OFFSET = 0,
-    TRACE_LIMIT= 8,
-};
-
 ZEND_BEGIN_MODULE_GLOBALS(pinpoint_php)
+//    uint  w_timeout_ms;
     char*  co_host; // tcp:ip:port should support dns
-    void*  root;    // Json::Value root
-    void*  writer;
-    CollectorAgentInfo agent_info;
-    uint  w_timeout_ms;
     zend_bool   utest_flag;
-    zend_bool   limit;
+//    zend_bool   limit;
     zend_bool    debug_report;
     int   tracelimit;
-    void*  call_stack;
-    TransLayer t_layer;
-    char logBuffer[LOG_SIZE];
-    SharedObject_T shared_obj;
-    uint64_t fetal_error_time;
 ZEND_END_MODULE_GLOBALS(pinpoint_php)
 
 extern ZEND_DECLARE_MODULE_GLOBALS(pinpoint_php);
