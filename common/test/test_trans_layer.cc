@@ -1,14 +1,15 @@
-﻿#include <gtest/gtest.h>
-#include "TransLayer.h"
-#include <unistd.h>
+﻿#include <unistd.h>
 #include <errno.h>
 #include<functional>
 #include<iostream>
+#include <gtest/gtest.h>
+
+#include "TransLayer.h"
+#include "json/json.h"
+
 using namespace testing;
 
-
 #define unix_socket  "./pinpoint_test.sock"
-const static char* g_msg = "Hello pinpoint!!!";
 bool run = true;
 
 int facke_server()
@@ -30,9 +31,17 @@ int facke_server()
         socklen_t addrlen;
         int cfd = accept(fd, &addr, &addrlen);
         pp_trace("recv cfd:%d",cfd);
+        Json::Value agentInfo;
 
-        strcpy((char*)buffer+sizeof(Header),g_msg);
-        int len = strlen(g_msg);
+        agentInfo["time"]=1234567;
+        agentInfo["id"]="test-app";
+        agentInfo["name"]="test-name";
+
+        Json::FastWriter writer;
+        std::string msg = writer.write(agentInfo);
+        strcpy((char*)buffer+sizeof(Header),msg.c_str());
+
+        int len = msg.length();
         Header* header = (Header*)buffer;
         header->type = htonl(RESPONSE_AGENT_INFO);
         header->length = htonl(len);
@@ -48,7 +57,12 @@ void handle_agent_info(int type,const char* buf,size_t len)
 {
     printf("%s",buf);
     EXPECT_EQ(type,RESPONSE_AGENT_INFO);
-    EXPECT_STREQ(buf,g_msg);
+    Json::Value  root;
+    Json::Reader reader;
+    reader.parse(buf,buf+len,root);
+    EXPECT_EQ(root["time"].asInt64(),1234567);
+    EXPECT_STREQ(root["id"].asCString(),"test-app");
+    EXPECT_STREQ(root["name"].asCString(),"test-name");
     run = false;
 }
 

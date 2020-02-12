@@ -4,6 +4,9 @@
 
 #include <stdarg.h>
 #include <cstdio>
+#include <functional>
+#include <iostream>
+
 #include "common.h"
 #include "TransLayer.h"
 #include "SharedObj.h"
@@ -45,6 +48,7 @@ public:
     trace_limit(agent.trace_limit),
     timeout_ms( agent.timeout_ms),
     co_host(agent.co_host),
+    start_time(0),
     translayer(TransLayer(agent.co_host,agent.timeout_ms))
     {
         this->fetal_error_time = 0;
@@ -60,6 +64,9 @@ public:
         this->app_name = "";
         this->app_id = "";
         this->limit = E_OFFLINE;
+        using namespace std::placeholders;
+        this->translayer.registerPeerMsgCallback(std::bind(&PerThreadAgent::_handleMsgFromCollector,this,_1,_2,_3));
+
     }
 
     ~PerThreadAgent()
@@ -214,6 +221,52 @@ public:
     }
 
     const char* formatLogging(const char *format,va_list args);
+
+private:
+
+    void _handleMsgFromCollector(int type,const char* buf,size_t len)
+    {
+        switch (type)
+        {
+
+        case RESPONSE_AGENT_INFO:
+            this->_handle_agent_info(type,buf,len);
+            break;
+        
+        default:
+            break;
+        }
+    
+    }
+
+    void _handle_agent_info(int type,const char* buf,size_t len)
+    {
+        Json::Value  root;
+        Json::Reader reader;
+        int ret = reader.parse(buf,buf+len,root);
+        if(!ret)
+        {
+            return ;
+        }
+
+        if(root.isMember("time")){
+            this->start_time = atoll(root["time"].asCString());
+        }
+
+        if(root.isMember("id")){
+            this->app_id      =  strdup(root["id"].asCString());
+        }
+
+        if(root.isMember("name")){
+            this->app_name    =  strdup(root["name"].asCString());
+        }
+
+        this->limit= E_TRACE_PASS;
+
+        pp_trace("starttime:%ld appid:%s appname:%s",this->start_time,this->app_id.c_str(),this->app_name.c_str());
+    }
+
+
 private:
     const char* co_host; // tcp:ip:port should support dns
     uint  timeout_ms;
@@ -226,6 +279,7 @@ private:
     char log_buf[LOG_SIZE]={0};
     std::string app_name;
     std::string app_id;
+    uint64_t start_time;
     Json::Value root;
     TransLayer translayer;
     Stack stack;
@@ -414,4 +468,14 @@ void test_trace()
         return ;
     }
     p_agent->setLimit(E_TRACE_PASS);
+}
+
+void pinpoint_drop_trace()
+{
+    PerThreadAgent* p_agent = get_agent();
+    if(p_agent == NULL)
+    {
+        return ;
+    }
+    p_agent->setLimit(E_TRACE_BLOCK); 
 }
