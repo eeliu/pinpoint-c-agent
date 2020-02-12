@@ -87,5 +87,6 @@ void pinpoint_add_clues(const  char* key,const  char* value);
 void pinpoint_add_clue(const  char* key,const  char* value);
 bool check_tracelimit(int64_t timestamp);
 int64_t generate_unique_id();
+void pinpoint_drop_trace();
 void test_trace();
 #endif /* COMMON_H_ */
