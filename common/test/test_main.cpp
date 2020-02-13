@@ -3,7 +3,10 @@
 
 PPAgentT global_agent_info = {
        "unix:./pinpoint.sock",
-        1,10
+        1,
+        10,
+        1500,
+        1
 };
 
 int main(int argc, char **argv) {

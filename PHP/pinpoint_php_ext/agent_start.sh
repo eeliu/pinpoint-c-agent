@@ -1,12 +1,15 @@
 #!/usr/bin/evn bash﻿
 # set -x
+set -e
 PHP_EXT_DIR=$(dirname $(readlink -f "$0"))
 PINPOINT_COMMON_DIR=$PHP_EXT_DIR/../../common
 echo $PHP_EXT_DIR
 func_build_common()
 {
     cd $PINPOINT_COMMON_DIR
-    mkdir build 
+    if ! test -d "build"; then
+        mkdir build 
+    fi
     cd build
     # cmake -DCMAKE_BUILD_TYPE=Release .. 
     cmake -DCMAKE_BUILD_TYPE=Debug  .. 

@@ -60,15 +60,11 @@ typedef struct collector_agent_s{
 
 typedef struct pp_agent_s{
     const char* co_host; // tcp:ip:port should support dns
-    uint  timeout_ms;
+    uint  timeout_ms;  // always be 0
     int   trace_limit;
     int   agent_type;
     uint8_t debug_report;
 }PPAgentT;
-
-typedef void(*log_error_cb)(char*);
-void register_error_cb(log_error_cb error_cb);
-void pp_trace(const char *format,...);
 
 /**
  *pinpoint_start_trace
@@ -97,8 +93,11 @@ void pinpoint_drop_trace();
 const char* pinpoint_app_id();
 const char* pinpoint_app_name();
 uint64_t pinpoint_start_time();
-void test_trace();
+void enable_trace_utest();
 void catch_error(const char* msg,const char* error_filename,uint error_lineno);
+typedef void(*log_error_cb)(char*);
+void register_error_cb(log_error_cb error_cb);
+void pp_trace(const char *format,...);
 #ifdef __cplusplus 
 }
 #endif

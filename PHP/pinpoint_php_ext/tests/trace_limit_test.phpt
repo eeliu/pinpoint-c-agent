@@ -19,7 +19,7 @@ if(pinpoint_tracelimit() || pinpoint_tracelimit() ||pinpoint_tracelimit() || pin
     echo "pinpoint_tracelimit failed";
 }
 --EXPECTF--
-[%d] triger:1
-[%d] triger:2
-[%d] this span should be dropped by trace limit:2
+[pinpoint] [%d] triger:1
+[pinpoint] [%d] triger:2
+[pinpoint] [%d] This span dropped. trace_limit:2 limit:1
 pass
