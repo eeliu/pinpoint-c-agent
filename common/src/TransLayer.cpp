@@ -1,4 +1,33 @@
 ﻿#include"TransLayer.h"
+#include <netdb.h>
+
+int TransLayer::connect_stream_remote(const char* remote)
+{
+    std::string hostname;
+    uint16_t port;
+
+
+    struct addrinfo hints;
+    struct addrinfo *result, *rp;
+    memset(&hints,0,sizeof(hints));
+    hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+    hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
+    hints.ai_flags = 0;
+    hints.ai_protocol = 0;          /* Any protocol */
+
+    int s = 0;
+    s = getaddrinfo(, , &hints, &result);
+    if (s != 0) {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
+        exit(EXIT_FAILURE);
+    }
+
+
+
+
+
+}
+
 
 int TransLayer::connect_unix_remote(const char* remote)
 {

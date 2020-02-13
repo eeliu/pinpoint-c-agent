@@ -71,6 +71,8 @@ explicit TransLayer(const char* co_host,uint w_timeout_ms):
 
 private:
 
+    int connect_stream_remote(const char* remote);
+
     int connect_unix_remote(const char* remote);
    
 
@@ -94,7 +96,8 @@ private:
             goto DONE;
         }
 
-        ///  tcp
+        ///  tcp tcp:localhost:
+
 
         ///  udp
 
