@@ -173,10 +173,6 @@ ZEND_TSRMLS_CACHE_DEFINE()
 ZEND_GET_MODULE(pinpoint_php)
 #endif
 
-#define UNIX_SOCKET "unix:"
-#define TCP_SOCKET "tcp:"
-#define CLUES "clues"
-
 void (*old_error_cb)(int type, const char *error_filename, const uint error_lineno, const char *format, va_list args);
 
 #define safe_free(x)\

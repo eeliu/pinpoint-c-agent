@@ -13,7 +13,8 @@
 #include "json/json.h"
 
 static log_error_cb _error_cb;
-static uint64_t get_current_msec_stamp();
+static inline uint64_t get_current_msec_stamp();
+
 const static char* CLUSE="clues";
 
 enum E_SHM_OFFSET{
@@ -48,7 +49,6 @@ public:
     co_host(agent.co_host),
     timeout_ms( agent.timeout_ms),
     trace_limit(agent.trace_limit),
-    start_time(0),
     translayer(TransLayer(agent.co_host,agent.timeout_ms)),
     json_writer()
     {
@@ -62,9 +62,10 @@ public:
         this->uid       = (int64_t*)((char*)fetch_shared_obj_addr() + UNIQUE_ID_OFFSET);
         this->triger_timestamp = (int64_t*)((char*)fetch_shared_obj_addr() + TRACE_LIMIT_OFFSET);
         this->triger    =  (int64_t*)((char*)fetch_shared_obj_addr() + TRIGER_OFFSET );
-        this->app_name = "";
-        this->app_id = "";
+        this->app_name = "default-appname";
+        this->app_id = "default-appid";
         this->limit = E_OFFLINE;
+        this->start_time =get_current_msec_stamp();
         json_writer.dropNullPlaceholders();
         json_writer.omitEndingLineFeed();
         using namespace std::placeholders;
@@ -449,7 +450,7 @@ int32_t pinpoint_end_trace()
     return p_agent->endTrace(p_agent);
 }
 
-uint64_t get_current_msec_stamp()
+inline uint64_t get_current_msec_stamp()
 {
     struct timeval tv;
     gettimeofday(&tv,NULL);
