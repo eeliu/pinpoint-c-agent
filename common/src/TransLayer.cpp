@@ -1,11 +1,26 @@
 ﻿#include"TransLayer.h"
 #include <netdb.h>
 
+/**
+ * remote: localhost:port
+*/
 int TransLayer::connect_stream_remote(const char* remote)
 {
-    std::string hostname;
-    uint16_t port;
 
+    int offset = strlen(remote) - 1;
+
+    while( remote[offset] !=':' )
+    {
+        offset--;
+        if(offset <= 0 ){
+            pp_trace("get an invalid remote %s",remote);
+            return -1;
+        }
+    }
+
+    std::string hostname(remote,offset);
+    const char* port_str = remote+offset+1;
+    int port = atoi(remote+offset+1);
 
     struct addrinfo hints;
     struct addrinfo *result, *rp;
@@ -16,16 +31,36 @@ int TransLayer::connect_stream_remote(const char* remote)
     hints.ai_protocol = 0;          /* Any protocol */
 
     int s = 0;
-    s = getaddrinfo(, , &hints, &result);
+    s = getaddrinfo(hostname.c_str() ,port_str , &hints, &result);
     if (s != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
-        exit(EXIT_FAILURE);
+        pp_trace("getaddrinfo failed: %s\n", gai_strerror(s));
+        return -1;
     }
+    int sfd = -1;
+    for (rp = result; rp != NULL; rp = rp->ai_next) {
+        sfd = socket(rp->ai_family, rp->ai_socktype,
+                    rp->ai_protocol);
 
+        // mark it as nonblock
+        fcntl(sfd, F_SETFL, fcntl(sfd, F_GETFL, 0) | O_NONBLOCK);
 
+        if (sfd == -1)
+            continue;
+        int ret = connect(sfd, rp->ai_addr, rp->ai_addrlen);
+        if ( ret == 0)
+        {
+            break;
+        }else if( ret == -1 ){
+            if( errno == EALREADY || errno ==  EINPROGRESS )
+                break; 
+        }
 
-
-
+        close(sfd);
+        sfd = -1;
+    }
+    freeaddrinfo(result);
+    
+    return sfd;
 }
 
 

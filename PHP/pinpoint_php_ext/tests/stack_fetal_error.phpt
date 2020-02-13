@@ -50,19 +50,20 @@ try{
 
 pinpoint_start_trace();
 --EXPECTF--
-[%d] pinpoint_start_trace 
-[%d] agent try to connect:(unix:/unexist_file.sock)
-[%d] connect:(/unexist_file.sock) failed as (No such file or directory)
-[%d] pinpoint_start_trace 
-[%d] name  -> Foo 
-[%d] apm_error_cb called
+[pinpoint] [%d] pinpoint_start start
+[pinpoint] [%d] agent try to connect:(unix:/unexist_file.sock)
+[pinpoint] [%d] connect:(/unexist_file.sock) failed as (No such file or directory)
+[pinpoint] [%d] pinpoint_start start
+[pinpoint] [%d] key:name value:Foo
+[pinpoint] [%d] apm_error_cb called
 
-Fatal error: Uncaught Exception: I am testting in %s:%d
+Fatal error: Uncaught Exception: I am testting in %s:27
 Stack trace:
 #0 %s(34): Test()
 #1 {main}
-  thrown in %s on line %d
-[%d] pinpoint_end_trace Done!
-[%d] connect:(/unexist_file.sock) failed as (No such file or directory)
-[%d] this span:({"E":%d,"ERR":{"file":"%s","line":%d,"msg":"Uncaught Exception: I am testting in %s:%d\nStack trace:\n#0 %s(34): Test()\n#1 {main}\n  thrown"},"FT":1500,"S":%d,"calls":[{"E":%d,"S":%d,"name":"Foo"}]})
-[%d] pinpoint_end_trace Done!
+  thrown in %s on line 27
+[pinpoint] [%d] pinpoint_end_trace Done!
+[pinpoint] [%d] this span:({"E":0,"ERR":{"file":"%s","line":27,"msg":"Uncaught Exception: I am testting in %s:27\nStack trace:\n#0 %s(34): Test()\n#1 {main}\n  thrown"},"FT":1500,"S":%d,"calls":[{"E":%d,"S":%d,"name":"Foo"}]})
+[pinpoint] [%d] agent try to connect:(unix:/unexist_file.sock)
+[pinpoint] [%d] connect:(/unexist_file.sock) failed as (No such file or directory)
+[pinpoint] [%d] pinpoint_end_trace Done!

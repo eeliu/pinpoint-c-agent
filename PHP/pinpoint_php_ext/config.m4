@@ -28,7 +28,7 @@ if test "$PHP_PINPOINT_PHP" != "no"; then
   AC_DEFINE(HAVE_PINPOINT_PHP, 1, [Whether you have pinpoint])
   
  
-  PINPOINT_PHP_SHARED_LIBADD="$PINPOINT_PHP_SHARED_LIBADD -Ldepends/lib -l:libpinpoint_common.a -l:libjsoncpp.a"
+  PINPOINT_PHP_SHARED_LIBADD="$PINPOINT_PHP_SHARED_LIBADD -Ldepends/lib -l:libpinpoint_common.a -l:libjsoncpp.a -lrt"
   
   dnl if test "$PHP_EXT_TEST" = "yes"; then
   dnl  AC_DEFINE([HAVE_EXT_TEST],[1],[has ext test])

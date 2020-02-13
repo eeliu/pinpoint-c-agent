@@ -15,7 +15,7 @@ void cc_log_error_cb(char*msg)
 TEST(common, trace)
 {
     register_error_cb(cc_log_error_cb);
-    test_trace();
+    enable_trace_utest();
     
     EXPECT_EQ(pinpoint_start_trace(),1);
     const char* key = "k1";
@@ -61,6 +61,15 @@ TEST(common, uid_all_in_one)
 }
 
 
+
+TEST(common, fetch_id_name)
+{
+    const char* app_name = pinpoint_app_name();
+    const char* app_id = pinpoint_app_id();
+    EXPECT_STREQ(app_name,"collector_blocking");
+    EXPECT_STREQ(app_id,"collector_blocking");
+    EXPECT_TRUE(pinpoint_start_time()>0);
+}
 
 
 // int mymatch(char *buf)

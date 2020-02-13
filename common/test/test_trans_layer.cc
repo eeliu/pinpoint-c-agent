@@ -87,3 +87,24 @@ TEST(translayer, unix_socket_layer)
     waitpid(pid,0,0);
 
 }
+
+TEST(translayer, stream_socket_layer)
+{
+    int fd = -1;
+    fd = TransLayer::connect_stream_remote("www.naver.com:80");
+    EXPECT_GT(fd,2);
+    close(fd);
+
+    fd = TransLayer::connect_stream_remote("172.217.175.68:80");
+    EXPECT_GT(fd,2);
+    close(fd);
+
+
+    fd = TransLayer::connect_stream_remote("-.217.175.68:80");
+    EXPECT_EQ(fd,-1);
+
+    fd = TransLayer::connect_stream_remote("-.217.175.68:-80");
+    EXPECT_EQ(fd,-1);
+
+}
+

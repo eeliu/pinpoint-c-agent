@@ -92,8 +92,8 @@ STD_PHP_INI_ENTRY("pinpoint_php.CollectorHost", "unix:/tmp/collector.sock", PHP_
 // STD_PHP_INI_ENTRY("pinpoint_php.SendSpanTimeOutMs", "0", PHP_INI_ALL,
 //         OnUpdateLong,w_timeout_ms,zend_pinpoint_php_globals,pinpoint_php_globals)
 
-//STD_PHP_INI_ENTRY("pinpoint_php.UnitTest", "no", PHP_INI_ALL,
-//        OnUpdateBool,utest_flag,zend_pinpoint_php_globals,pinpoint_php_globals)
+STD_PHP_INI_ENTRY("pinpoint_php.UnitTest", "no", PHP_INI_ALL,
+        OnUpdateBool,utest_flag,zend_pinpoint_php_globals,pinpoint_php_globals)
 
 // STD_PHP_INI_ENTRY("pinpoint_php.AppId", "collector_blocking", PHP_INI_ALL,
 //         OnUpdateString,agent_info.appid,zend_pinpoint_php_globals,pinpoint_php_globals)
@@ -439,7 +439,13 @@ PHP_MINIT_FUNCTION(pinpoint_php)
     global_agent_info.co_host =  PPG(co_host);
     global_agent_info.debug_report = PPG(debug_report);
     global_agent_info.trace_limit =PPG(tracelimit);
-    register_error_cb(pinpoint_log);
+    global_agent_info.agent_type = 1500; // PHP
+
+    if (PPG(utest_flag) == 1){
+        enable_trace_utest();
+    }else{
+        register_error_cb(pinpoint_log);
+    }
 
     return SUCCESS;
 }

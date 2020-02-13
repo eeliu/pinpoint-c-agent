@@ -69,13 +69,17 @@ explicit TransLayer(const char* co_host,uint w_timeout_ms):
         }
     }
 
+
+#ifdef UTEST
+
+#else
 private:
+#endif
 
-    int connect_stream_remote(const char* remote);
+    static int connect_stream_remote(const char* remote);
 
-    int connect_unix_remote(const char* remote);
+    static int connect_unix_remote(const char* remote);
    
-
     int connect_remote(const char* statement)
     {
         int fd = -1;
@@ -96,14 +100,20 @@ private:
             goto DONE;
         }
 
-        ///  tcp tcp:localhost:
+        ///  tcp tcp:localhost:port
+        substring = strcasestr(statement,TCP_SOCKET);
+        if( substring == statement )
+        {
+            // sizeof = len +1, so substring -> /tmp/collector.sock
+            substring = substring + strlen(TCP_SOCKET);
+            fd = TransLayer::connect_stream_remote(substring);
+            c_fd = fd;
+            goto DONE;
+        }
 
-
-        ///  udp
 
         pp_trace("remote is not valid:%s",statement);
     DONE:
-        /// Add  whoamI info
 
         return fd;
     }

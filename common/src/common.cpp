@@ -62,8 +62,8 @@ public:
         this->uid       = (int64_t*)((char*)fetch_shared_obj_addr() + UNIQUE_ID_OFFSET);
         this->triger_timestamp = (int64_t*)((char*)fetch_shared_obj_addr() + TRACE_LIMIT_OFFSET);
         this->triger    =  (int64_t*)((char*)fetch_shared_obj_addr() + TRIGER_OFFSET );
-        this->app_name = "default-appname";
-        this->app_id = "default-appid";
+        this->app_name = "collector_blocking";
+        this->app_id = "collector_blocking";
         this->limit = E_OFFLINE;
         this->start_time =get_current_msec_stamp();
         json_writer.dropNullPlaceholders();
@@ -193,7 +193,7 @@ public:
 
         if(this->limit == E_OFFLINE)
         {
-            return true;
+            goto BLOCK;
         }
 
         if(this->trace_limit < 0)
@@ -201,24 +201,28 @@ public:
             return false;
         }else if(this->trace_limit == 0)
         {
-            return true;
+            goto BLOCK;
         }
         else if(*this->triger_timestamp != ts )
         {
             __sync_synchronize();
             *this->triger_timestamp = ts;
             *triger = 0 ;
-
         }
         else if(*triger >= this->trace_limit)
         {
-            return true;
+            goto BLOCK;
         }else
         {
             __sync_add_and_fetch(this->triger,1);
             pp_trace("triger:%ld",*triger);
         }
+
+PASS:
         return false;
+BLOCK:
+        pp_trace("This span dropped. trace_limit:%d limit:%d",this->trace_limit,this->limit);
+        return true;
     }
 
     void catchFetalError(const char* msg,const char* error_filename,uint error_lineno)
@@ -248,12 +252,12 @@ public:
         return this->start_time;
     }
 
-    inline std::string getAppId() const
+    inline const std::string& getAppId() const
     {
         return this->app_id;
     }
 
-    inline std::string getAppName() const
+    inline const std::string& getAppName() const
     {
         return this->app_name;
     }
@@ -290,11 +294,11 @@ private:
         }
 
         if(root.isMember("id")){
-            this->app_id      =  strdup(root["id"].asCString());
+            this->app_id      =  root["id"].asString();
         }
 
         if(root.isMember("name")){
-            this->app_name    =  strdup(root["name"].asCString());
+            this->app_name    = root["name"].asString();
         }
 
         this->limit= E_TRACE_PASS;
@@ -502,7 +506,7 @@ int64_t generate_unique_id()
     return (int64_t)p_agent->generateUniqueId();
 }
 
-void test_trace()
+void enable_trace_utest()
 {
     PerThreadAgent* p_agent = get_agent();
     if(p_agent == NULL)
@@ -547,7 +551,7 @@ const char* pinpoint_app_id()
     PerThreadAgent* p_agent = get_agent();
     if(p_agent == NULL)
     {
-        return "";
+        return "agent-not-found";
     }
     return p_agent->getAppId().c_str();
 }
@@ -557,7 +561,7 @@ const char* pinpoint_app_name()
     PerThreadAgent* p_agent = get_agent();
     if(p_agent == NULL)
     {
-        return "";
+        return "agent-not-found";
     }
     return p_agent->getAppName().c_str();
 }
