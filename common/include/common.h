@@ -27,6 +27,13 @@
 
 #endif
 
+#ifndef bool
+#define bool char
+#define true 1
+#define false 0
+#endif
+
+
 //fix #129
 #ifndef uint
 #define uint unsigned int
