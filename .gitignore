@@ -17,7 +17,6 @@ build
 venv
 .settings/
 CI/
-*.txt
 thirdparty
 cmake-build-debug
 *.gcda

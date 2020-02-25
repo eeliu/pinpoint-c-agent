@@ -1,0 +1,250 @@
+#include <Python.h>
+#include <string.h>
+#include "pinpoint_py.h"
+
+
+PPAgentT global_agent_info;
+static PyObject *py_obj_msg_callback;
+static char* g_collector_host ;
+
+#ifndef CYTHON_UNUSED
+# if defined(__GNUC__)
+#   if !(defined(__cplusplus)) || (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4))
+#     define CYTHON_UNUSED __attribute__ ((__unused__))
+#   else
+#     define CYTHON_UNUSED
+#   endif
+# elif defined(__ICC) || (defined(__INTEL_COMPILER) && !defined(_MSC_VER))
+#   define CYTHON_UNUSED __attribute__ ((__unused__))
+# else
+#   define CYTHON_UNUSED
+# endif
+#endif
+
+
+/**
+ * void pinpoint_add_clues(const  char* key,const  char* value);
+ * */
+static PyObject *py_pinpoint_add_clues(PyObject *self, PyObject *args) 
+{
+    char* key = NULL;
+    char* value = NULL;
+    if(PyArg_ParseTuple(args,"ss",&key,&value))
+    {
+        pinpoint_add_clues(key,value);
+    }
+    return Py_BuildValue("O",Py_True);
+}
+
+/**
+ * void pinpoint_add_clue(const  char* key,const  char* value);
+*/
+static PyObject *py_pinpoint_add_clue(PyObject *self, PyObject *args)
+{
+    char* key = NULL;
+    char* value = NULL;
+    if(PyArg_ParseTuple(args,"ss",&key,&value))
+    {
+       pinpoint_add_clue(key,value);
+    }
+    return Py_BuildValue("O",Py_True);
+}
+
+/**
+ * bool check_tracelimit(int64_t timestamp);
+*/
+static PyObject *py_check_tracelimit(PyObject *self, PyObject *args)
+{
+    int64_t timestamp= -1;
+    bool ret;
+    if(! PyArg_ParseTuple(args,"l",&timestamp))
+    {
+        return NULL;
+    }
+    ret = check_tracelimit(timestamp);
+    if(ret == true){
+         return Py_BuildValue("O",Py_True);
+    }else{
+        return Py_BuildValue("O",Py_False);
+    }
+
+}
+
+static PyObject *py_pinpoint_start_trace(PyObject *self,CYTHON_UNUSED  PyObject *unused)
+{
+    int ret = pinpoint_start_trace();
+    return Py_BuildValue("i", ret);
+}
+
+
+static PyObject *py_pinpoint_end_trace(PyObject *self, CYTHON_UNUSED PyObject *unused)
+{
+    int ret = pinpoint_end_trace();
+    return Py_BuildValue("i", ret);
+}
+
+static PyObject *py_generate_unique_id(PyObject *self, CYTHON_UNUSED PyObject *unused)
+{
+    uint64_t ret = generate_unique_id();
+    return Py_BuildValue("l", ret);
+}
+
+static PyObject *py_pinpoint_drop_trace(PyObject *self, CYTHON_UNUSED PyObject *unused)
+{
+    pinpoint_drop_trace();
+    return Py_BuildValue("O",Py_True);
+}
+
+static PyObject *py_pinpoint_app_id(PyObject *self, CYTHON_UNUSED PyObject *unused)
+{
+    const char* app_id = pinpoint_app_id();
+
+    return Py_BuildValue("s",app_id);
+}
+
+static PyObject *py_pinpoint_app_name(PyObject *self, CYTHON_UNUSED PyObject *unused)
+{
+    const char* app_name = pinpoint_app_name();
+
+    return Py_BuildValue("s",app_name);
+}
+
+
+static PyObject *py_pinpoint_start_time(PyObject *self, CYTHON_UNUSED PyObject *unused)
+{
+    uint64_t start_time = pinpoint_start_time();
+    return Py_BuildValue("l",start_time);
+}
+
+//origin from https://docs.python.org/3/extending/extending.html#calling-python-functions-from-c
+
+static void msg_log_error_cb(char* msg)
+{
+    if(py_obj_msg_callback && msg)
+    {
+        PyObject *arglist;
+        PyObject *result;
+        arglist = Py_BuildValue("(s)", msg);
+        result = PyObject_CallObject(py_obj_msg_callback, arglist);
+        if(result == NULL)
+        {
+            PyErr_SetString(PyExc_TypeError, "null result");
+            return ;
+        }
+        Py_XDECREF(result); // I don't care return
+        Py_DECREF(arglist);
+    }
+}
+
+
+static PyObject *py_pinpoint_enable_utest(PyObject *self, PyObject *args)
+{
+    enable_trace_utest();
+    global_agent_info.debug_report = 1;
+
+    PyObject *temp;
+    if (PyArg_ParseTuple(args, "O:callback", &temp)) 
+    {
+        if (!PyCallable_Check(temp)) 
+        {
+            PyErr_SetString(PyExc_TypeError, "parameter must be callable");
+            return NULL;
+        }
+        Py_XINCREF(temp);
+        Py_XDECREF(py_obj_msg_callback);
+        py_obj_msg_callback = temp;     
+    }
+// disable GIL 
+
+// register msg callback
+    register_error_cb(msg_log_error_cb);
+
+    return Py_BuildValue("O",Py_True);
+}
+
+
+static PyObject *py_set_collector_host(PyObject *self, PyObject *args)
+{
+    char* host = NULL;
+    if(PyArg_ParseTuple(args,"s",&host))
+    {
+        if(strcasestr(host,"unix") || strcasestr(host,"tcp"))
+        {
+            if(g_collector_host)
+            {
+                free(g_collector_host);
+                g_collector_host = NULL;
+            }
+
+            g_collector_host = strdup(host);
+            global_agent_info.co_host = g_collector_host;
+            return Py_BuildValue("O",Py_True);
+        }
+        PyErr_SetString(PyExc_TypeError, "collector_host must start with unix/tcp");
+        return NULL;
+    }
+    else
+    {
+        PyErr_SetString(PyExc_TypeError, "collector_host must be a string");
+        return NULL;
+    }
+}
+
+
+
+static void free_pinpoint_module(void * module)
+{
+    Py_XDECREF(py_obj_msg_callback);
+    if (g_collector_host)
+    {
+        free(g_collector_host);
+    }
+
+}
+
+
+/* Module method table */
+static PyMethodDef PinpointMethods[] = {
+    {"start_trace", py_pinpoint_start_trace, METH_NOARGS, "star trace"},
+    {"end_trace", py_pinpoint_end_trace, METH_NOARGS, "stop trace"},
+    {"unique_id", py_generate_unique_id, METH_NOARGS, "return unique_id"},
+    {"drop_trace", py_pinpoint_drop_trace, METH_NOARGS, "drop current trace"},
+    {"app_id", py_pinpoint_app_id, METH_NOARGS, "default app id"},
+    {"app_name", py_pinpoint_app_name, METH_NOARGS, "default app name"},
+    {"start_time", py_pinpoint_start_time, METH_NOARGS, "app start time"},
+    {"add_clues", py_pinpoint_add_clues, METH_VARARGS, "add trace clues"},
+    {"add_clue", py_pinpoint_add_clue, METH_VARARGS, "add trace clue"},
+    {"check_tracelimit", py_check_tracelimit, METH_VARARGS, "check trace whether is limit"},
+    {"enable_debug", py_pinpoint_enable_utest, METH_VARARGS, "enable logging output(callback )"},
+    {"set_collector_host", py_set_collector_host, METH_VARARGS, "address: unix:/tmp/collector-agent.sock or tcp:host:port"},
+    { NULL, NULL, 0, NULL}
+};
+
+/* Module structure */
+static struct PyModuleDef pinpointmodule = {
+    PyModuleDef_HEAD_INIT,
+
+    "pinpoint",           /* name of module */
+    "An agent for pinpoint platform",  /* Doc string (may be NULL) */
+    -1,                 /* Size of per-interpreter state or -1 */
+    PinpointMethods,       /* Method table */
+    NULL,
+    NULL,
+    NULL,
+    free_pinpoint_module /* free global variables*/
+};
+
+
+
+/* Module initialization function */
+PyMODINIT_FUNC
+PyInit_pinpoint(void) {
+    
+    global_agent_info.agent_type=1700;
+    global_agent_info.co_host = "unix:/tmp/collector.sock";
+    global_agent_info.debug_report = 0;
+    global_agent_info.timeout_ms = 0;
+    global_agent_info.trace_limit = -1;
+
+  return PyModule_Create(&pinpointmodule);
+}
