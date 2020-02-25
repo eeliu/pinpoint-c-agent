@@ -72,14 +72,33 @@ static PyObject *py_check_tracelimit(PyObject *self, PyObject *args)
 
 static PyObject *py_pinpoint_start_trace(PyObject *self,CYTHON_UNUSED  PyObject *unused)
 {
-    int ret = pinpoint_start_trace();
+    int ret = 0;
+    if(global_agent_info.debug_report == 1)
+    {
+        ret = pinpoint_start_trace();
+    }else{
+        Py_BEGIN_ALLOW_THREADS
+        ret = pinpoint_start_trace();
+        Py_END_ALLOW_THREADS
+    }
+
     return Py_BuildValue("i", ret);
 }
 
 
 static PyObject *py_pinpoint_end_trace(PyObject *self, CYTHON_UNUSED PyObject *unused)
 {
-    int ret = pinpoint_end_trace();
+    int ret = 0;
+    if(global_agent_info.debug_report == 1)
+    {
+        ret = pinpoint_end_trace();
+    }else
+    {
+        Py_BEGIN_ALLOW_THREADS
+        ret = pinpoint_end_trace();
+        Py_END_ALLOW_THREADS
+    }
+
     return Py_BuildValue("i", ret);
 }
 
