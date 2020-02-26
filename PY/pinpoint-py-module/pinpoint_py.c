@@ -147,7 +147,9 @@ static void msg_log_error_cb(char* msg)
         result = PyObject_CallObject(py_obj_msg_callback, arglist);
         if(result == NULL)
         {
-            PyErr_SetString(PyExc_TypeError, "null result");
+            fprintf(stderr,"%s",msg);
+            PyErr_SetString(PyExc_TypeError, msg);
+            abort();
             return ;
         }
         Py_XDECREF(result); // I don't care return
@@ -158,25 +160,24 @@ static void msg_log_error_cb(char* msg)
 
 static PyObject *py_pinpoint_enable_utest(PyObject *self, PyObject *args)
 {
-    enable_trace_utest();
     global_agent_info.debug_report = 1;
 
     PyObject *temp;
     if (PyArg_ParseTuple(args, "O:callback", &temp)) 
     {
-        if (!PyCallable_Check(temp)) 
+        if (PyCallable_Check(temp)) 
         {
-            PyErr_SetString(PyExc_TypeError, "parameter must be callable");
-            return NULL;
+            Py_XINCREF(temp);
+            Py_XDECREF(py_obj_msg_callback);
+            py_obj_msg_callback = temp;  
         }
-        Py_XINCREF(temp);
-        Py_XDECREF(py_obj_msg_callback);
-        py_obj_msg_callback = temp;     
     }
+
 // disable GIL 
 
 // register msg callback
     register_error_cb(msg_log_error_cb);
+    enable_trace_utest();
 
     return Py_BuildValue("O",Py_True);
 }
@@ -196,7 +197,12 @@ static PyObject *py_set_collector_host(PyObject *self, PyObject *args)
             }
 
             g_collector_host = strdup(host);
+            
+            // NOTE: co_host must be protected when writting
+            global_agent_info.get_write_lock();
             global_agent_info.co_host = g_collector_host;
+            global_agent_info.release_lock(); 
+
             return Py_BuildValue("O",Py_True);
         }
         PyErr_SetString(PyExc_TypeError, "collector_host must start with unix/tcp");
@@ -242,7 +248,6 @@ static PyMethodDef PinpointMethods[] = {
 /* Module structure */
 static struct PyModuleDef pinpointmodule = {
     PyModuleDef_HEAD_INIT,
-
     "pinpoint",           /* name of module */
     "An agent for pinpoint platform",  /* Doc string (may be NULL) */
     -1,                 /* Size of per-interpreter state or -1 */

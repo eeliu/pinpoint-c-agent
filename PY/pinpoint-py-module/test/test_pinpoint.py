@@ -1,18 +1,17 @@
 ﻿from unittest import TestCase
 import unittest
 import pinpoint
-from io import StringIO
 import sys
 
 
-def test_output(msg):
+def output(msg):
     print(msg)
 
-class TestImplement(TestCase):
+class TestAgent(TestCase):
      
     def setUp(self) -> None:
         self.assertTrue(pinpoint.set_collector_host('unix:/tmp/collector-agent.sock'))
-        self.assertTrue(pinpoint.enable_debug(test_output))
+        self.assertTrue(pinpoint.enable_debug(output))
 
     def test_trace_life(self):
         self.assertEqual(pinpoint.start_trace(),1)

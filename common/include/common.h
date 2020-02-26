@@ -18,21 +18,16 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifdef __linux__
 #define likely(x)        __builtin_expect(!!(x), 1)
 #define unlikely(x)      __builtin_expect(!!(x), 0)
 #elif _WIN32
+
 #else
 
 #endif
-
-#ifndef bool
-#define bool char
-#define true 1
-#define false 0
-#endif
-
 
 //fix #129
 #ifndef uint
@@ -65,12 +60,16 @@ typedef struct collector_agent_s{
 
 #define LOG_SIZE 4096
 
+typedef void (*VOID_FUNC)(void);
 typedef struct pp_agent_s{
     const char* co_host; // tcp:ip:port should support dns
     uint  timeout_ms;  // always be 0
     int   trace_limit;
     int   agent_type;
     uint8_t debug_report;
+    VOID_FUNC get_read_lock;
+    VOID_FUNC get_write_lock;
+    VOID_FUNC release_lock;
 }PPAgentT;
 
 /**
@@ -88,19 +87,20 @@ typedef struct pp_agent_s{
 #ifdef __cplusplus 
 extern "C"{
 #endif
+
 extern PPAgentT global_agent_info;
 
-int32_t pinpoint_start_trace();
-int32_t pinpoint_end_trace();
+int32_t pinpoint_start_trace(void);
+int32_t pinpoint_end_trace(void);
 void pinpoint_add_clues(const  char* key,const  char* value);
 void pinpoint_add_clue(const  char* key,const  char* value);
 bool check_tracelimit(int64_t timestamp);
-int64_t generate_unique_id();
-void pinpoint_drop_trace();
-const char* pinpoint_app_id();
-const char* pinpoint_app_name();
-uint64_t pinpoint_start_time();
-void enable_trace_utest();
+int64_t generate_unique_id(void);
+void pinpoint_drop_trace(void);
+const char* pinpoint_app_id(void);
+const char* pinpoint_app_name(void);
+uint64_t pinpoint_start_time(void);
+void enable_trace_utest(void);
 void catch_error(const char* msg,const char* error_filename,uint error_lineno);
 typedef void(*log_error_cb)(char*);
 void register_error_cb(log_error_cb error_cb);
