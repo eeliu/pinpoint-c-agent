@@ -2,7 +2,7 @@
 #include "common.h"
 
 PPAgentT global_agent_info = {
-       "unix:./pinpoint.sock",
+       "unix:./pinpoint_test.sock",
         1,
         10,
         1500,

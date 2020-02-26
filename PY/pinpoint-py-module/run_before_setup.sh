@@ -21,6 +21,7 @@ func_build_common()
 func_cp_common()
 {
     cd $PHP_EXT_DIR
+    mkdir -p depends
     cp $PINPOINT_COMMON_DIR/lib depends/  -rf
     cp $PINPOINT_COMMON_DIR/include depends/  -rf
     cd $PHP_EXT_DIR

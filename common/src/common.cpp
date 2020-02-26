@@ -45,11 +45,10 @@ public:
 typedef std::stack<TraceNode> Stack;
 class PerThreadAgent{
 public:
-    PerThreadAgent(PPAgentT agent):
-    co_host(agent.co_host),
-    timeout_ms( agent.timeout_ms),
+    PerThreadAgent(PPAgentT& agent):
+    timeout_ms(agent.timeout_ms),
     trace_limit(agent.trace_limit),
-    translayer(TransLayer(agent.co_host,agent.timeout_ms)),
+    translayer(TransLayer(agent,agent.timeout_ms)),
     json_writer()
     {
         this->fetal_error_time = 0;
@@ -309,7 +308,7 @@ private:
 
 
 private:
-    const char* co_host; // tcp:ip:port should support dns
+    // const char**co_host; // tcp:ip:port should support dns
     uint  timeout_ms;
     E_ANGET_STATUS  limit;
     const int   trace_limit;
@@ -337,10 +336,28 @@ private:
 #define getOSPid getpid
 pthread_key_t key;
 pthread_once_t init_done = PTHREAD_ONCE_INIT;
+pthread_rwlock_t rwlock = PTHREAD_RWLOCK_INITIALIZER;
 static void _init_common_shared() __attribute__((constructor));
 static void _free_common_shared() __attribute__((destructor));
 static void thread_init(void);
 static void free_agent(void *agent);
+
+
+static void _get_read_lock()
+{
+    pthread_rwlock_rdlock(&rwlock);
+}
+
+static void _release_lock()
+{
+    pthread_rwlock_unlock(&rwlock);
+}
+
+static void _get_write_lock()
+{
+    pthread_rwlock_wrlock(&rwlock);
+}
+
 
 void _init_common_shared()
 {
@@ -351,11 +368,18 @@ void _init_common_shared()
     {
         fprintf(stderr,"[pinpoint] initialize pinpoint module failed!");
     }
+
+    pthread_rwlock_init(&rwlock,NULL);
+    // initialize bind global
+    global_agent_info.get_read_lock  = _get_read_lock;
+    global_agent_info.get_write_lock = _get_write_lock;
+    global_agent_info.release_lock   = _release_lock;
 }
 
 void _free_common_shared()
 {
     detach_shared_obj();
+    pthread_rwlock_destroy(&rwlock);
 }
 
 
@@ -370,7 +394,7 @@ void register_error_cb(log_error_cb error_cb)
     _error_cb  = error_cb;
 }
 
-PerThreadAgent* get_agent()
+static PerThreadAgent* get_agent()
 {
     void* spec = pthread_getspecific(key);
     if( unlikely(spec == NULL) ){

@@ -7,10 +7,6 @@
 
 #ifndef INCLUDE_PPTRANSLAYER_H_
 #define INCLUDE_PPTRANSLAYER_H_
-
-#include "common.h"
-#include "Chunk.h"
-
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -24,26 +20,17 @@
 #include <iostream>
 #include <functional>
 
-// typedef struct trans_layer_t TransLayer;
-// typedef int  (*TransHandleCB)(TransLayer*);
-// typedef struct trans_layer_t{
-//     int           c_fd;         // collector fd, use to send data;
-//     Chunks*        chunks;      // A fixed size for span [0,MAX_VEC]
-//     TransHandleCB socket_read_cb;
-//     TransHandleCB socket_write_cb;
-//     char           in_buf[IN_MSG_BUF_SIZE];
-// }TransLayer;
-
-
+#include "common.h"
+#include "Chunk.h"
 
 class TransLayer{
 
 enum E_STATE{S_WRITTING,S_READING};
 
 public:
-explicit TransLayer(const char* co_host,uint w_timeout_ms):
+explicit TransLayer(const PPAgentT &_agent,uint w_timeout_ms):
     chunks(1024*1024,1024),
-    co_host(co_host),
+    agent(_agent),
     w_timeout_ms(w_timeout_ms),
     _state(S_READING),
     c_fd(-1)
@@ -226,9 +213,8 @@ private:
     }
 
 private:
-   
+    const PPAgentT &agent;
     Chunks        chunks;
-    const char*   co_host;
     uint          w_timeout_ms;
     E_STATE       _state;
     char          in_buf[IN_MSG_BUF_SIZE]= {0};

@@ -19,16 +19,15 @@
  *  Created on: Jul 2, 2019
  *      Author: eeliu
  */
-
-#include "common.h"
-
+#ifndef COMMON_SRC_CHUNK_H
+#define COMMON_SRC_CHUNK_H
 #include <stdlib.h>
 #include <list>
 #include <string.h>
 #include <json/json.h>
 #include <assert.h>
-#include<functional>
-#include<iostream>
+#include <functional>
+#include <iostream>
 
 class Chunks
 {
@@ -97,3 +96,4 @@ public:
 
 };
 
+#endif
