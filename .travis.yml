@@ -3,6 +3,17 @@ language: python
 
 jobs:
   include:
+    - name: "common"
+      env:
+        - ROOT=$PWD
+      script:
+        - cd common
+        - mkdir -p build
+        - cd build
+        - cmake -DCMAKE_BUILD_TYPE=Release .. 
+        - make 
+        - ./test/unittest
+
     - php: "7.3"
       env:
         - ROOT=$PWD

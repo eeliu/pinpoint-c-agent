@@ -20,7 +20,7 @@ int TransLayer::connect_stream_remote(const char* remote)
 
     std::string hostname(remote,offset);
     const char* port_str = remote+offset+1;
-    int port = atoi(remote+offset+1);
+    // int port = atoi(remote+offset+1);
 
     struct addrinfo hints;
     struct addrinfo *result, *rp;

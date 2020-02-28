@@ -217,7 +217,6 @@ public:
             pp_trace("triger:%ld",*triger);
         }
 
-PASS:
         return false;
 BLOCK:
         pp_trace("This span dropped. trace_limit:%d limit:%d",this->trace_limit,this->limit);
