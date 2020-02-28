@@ -1,14 +1,87 @@
-language: php
+os: linux
+language: python
 
-php:
-- 7.1
-- 7.2
-- 7.3
+jobs:
+  include:
+    - php: "7.3"
+      env:
+        - ROOT=$PWD
+      script:
+        - cmake --version
+        - cd $ROOT/PHP/pinpoint_php_ext/
+        - sh agent_start.sh
+        - phpize && ./configure && make
+        - make test
+    - php: "7.2"
+      env:
+        - ROOT=$PWD
+      script:
+        - cmake --version
+        - cd $ROOT/PHP/pinpoint_php_ext/
+        - sh agent_start.sh
+        - phpize && ./configure && make
+        - make test
 
-env:
-- ROOT=$PWD
-script:
-- set -x
-- cd $ROOT/PHP/pinpoint_php_ext/
-- phpize && ./configure && make
-- make test
+    - php: "7.1"
+      env:
+        - ROOT=$PWD
+      script:
+        - cmake --version
+        - cd $ROOT/PHP/pinpoint_php_ext/
+        - sh agent_start.sh
+        - phpize && ./configure && make
+        - make test
+    - name: "python 3.8"
+      python: 
+        - "3.8"
+      env:
+        - ROOT=$PWD
+      script:
+        - cmake --version
+        - cd $ROOT/PY/pinpoint-py-module/
+        - pip install -r requirements.txt 
+        - sh run_before_setup.sh
+        - python3 setup.py install
+        - nosetests --exclude-test-file=test/TestUnderProcessMode.py ##
+
+    - name: "python 3.6"
+      python: 
+      - 3.6
+      env:
+        - ROOT=$PWD
+      script:
+        - cmake --version
+        - cd $ROOT/PY/pinpoint-py-module/
+        - pip install -r requirements.txt 
+        - sh run_before_setup.sh
+        - python3 setup.py install
+        - nosetests --exclude-test-file=test/TestUnderProcessMode.py ##
+    - name: "python 3.5"
+      python: 
+      - 3.5
+      env:
+        - ROOT=$PWD
+      script:
+        - cmake --version
+        - cd $ROOT/PY/pinpoint-py-module/
+        - pip install -r requirements.txt 
+        - sh run_before_setup.sh
+        - python3 setup.py install
+        - nosetests --exclude-test-file=test/TestUnderProcessMode.py ##
+
+    - name: "python 3.7"
+      python: 
+        - "3.7"
+      env:
+        - ROOT=$PWD
+      script:
+        - cmake --version
+        - cd $ROOT/PY/pinpoint-py-module/
+        - pip install -r requirements.txt 
+        - sh run_before_setup.sh
+        - python3 setup.py install
+        - nosetests --exclude-test-file=test/TestUnderProcessMode.py ##
+
+notifications:
+  email:
+    eeliu2009@gmail.com
