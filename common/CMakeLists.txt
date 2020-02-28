@@ -13,6 +13,7 @@ set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Werror -O2 -Wall -fPIC ")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Werror -g3 -O0 -fPIC")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Werror -O2 -Wall -fPIC")
 
+include (CTest)
 enable_testing()
 find_package(GTest REQUIRED)
 
@@ -21,3 +22,5 @@ find_package(pcre)
 add_subdirectory(json)
 add_subdirectory(src)
 add_subdirectory(test)
+
+
