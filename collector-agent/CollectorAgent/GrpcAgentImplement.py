@@ -34,6 +34,7 @@ from Span_pb2 import PSpanMessage
 
 
 class GrpcAgentImplement(PinpointAgent):
+
     class SpanSender(object):
         def __init__(self, span_addr, appid, appname, starttime,max_pending_sz):
             self.agent_meta = [('starttime', str(starttime)), ('agentid', appid), ('applicationname', appname)]
@@ -66,7 +67,7 @@ class GrpcAgentImplement(PinpointAgent):
             self.span_client.stop()
             TCLogger.info("grpc agent dropped %d",self.dropped_span_count)
 
-    def __init__(self, ac, app_id, app_name, serviceType=PHP):
+    def __init__(self, ac, app_id, app_name, serviceType):
 
         assert ac.collector_type == SUPPORT_GRPC
         super().__init__(app_id, app_name)
@@ -74,7 +75,7 @@ class GrpcAgentImplement(PinpointAgent):
                            ('agentid', app_id),
                            ('applicationname', app_name)]
         self.startTimeStamp = ac.startTimestamp
-
+        self.service_type = serviceType
         self.max_pending_sz = ac.max_pending_size
         self.agent_addr = ac.CollectorAgentIp + ':' + str(ac.CollectorAgentPort)
         self.stat_addr = ac.CollectorStatIp + ':' + str(ac.CollectorSpanPort)
@@ -88,7 +89,7 @@ class GrpcAgentImplement(PinpointAgent):
         self._startSpanSender()
 
         self.agent_client = GrpcAgent(self.agentHost.hostname, self.agentHost.ip, ac.getWebPort(), os.getpid(),
-                                      self.agent_addr, self.agent_meta)
+                                      self.agent_addr, self.service_type,self.agent_meta)
         self.meta_client = GrpcMeta(self.agent_addr, self.agent_meta)
 
         self.agent_client.start()

@@ -42,7 +42,7 @@ class ThriftAgentImplement(PinpointAgent):
         self.spanHost = (ac.CollectorSpanIp, ac.CollectorSpanPort)
         TCLogger.debug(
             "CollectorTcp %s CollectorStat %s CollectorSpan %s" % (self.tcpHost, self.statHost, self.spanHost))
-
+        self.serviceType = serviceType
         self.tcpLayer = StreamClientLayer(self.tcpHost, self.handlerResponse, self.collectorTcpHello)
 
         self.spanLayer = DgramLayer(self.spanHost, None)
@@ -281,7 +281,7 @@ class ThriftAgentImplement(PinpointAgent):
             self.agentInfo.ip,
             self.agentInfo.agentId,
             self.agentInfo.applicationName,
-            PHP,
+            self.serviceType,
             self.agentInfo.pid,
             self.agentInfo.agentVersion,
             self.startTimeStamp)
