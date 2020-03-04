@@ -60,16 +60,16 @@ typedef struct collector_agent_s{
 
 #define LOG_SIZE 4096
 
-typedef void (*void_func)(void);
+typedef void (*VOID_FUNC)(void);
 typedef struct pp_agent_s{
     const char* co_host; // tcp:ip:port should support dns
     uint  timeout_ms;  // always be 0
     int   trace_limit;
     int   agent_type;
     uint8_t debug_report;
-    void_func get_read_lock;
-    void_func get_write_lock;
-    void_func release_lock;
+    VOID_FUNC get_read_lock;
+    VOID_FUNC get_write_lock;
+    VOID_FUNC release_lock;
 }PPAgentT;
 
 /**
