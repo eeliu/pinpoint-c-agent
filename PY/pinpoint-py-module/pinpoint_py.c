@@ -50,6 +50,39 @@ static PyObject *py_pinpoint_add_clue(PyObject *self, PyObject *args)
     return Py_BuildValue("O",Py_True);
 }
 
+
+/**
+ * void pinpoint_set_special_key(const  char* key,const  char* value);
+*/
+static PyObject *py_pinpoint_set_key(PyObject *self, PyObject *args)
+{
+    char* key = NULL;
+    char* value = NULL;
+    if(PyArg_ParseTuple(args,"ss",&key,&value))
+    {
+       pinpoint_set_special_key(key,value);
+    }
+    return Py_BuildValue("O",Py_True);
+}
+
+
+/**
+ * const  char* pinpoint_get_special_key(const  char* key);
+*/
+static PyObject *py_pinpoint_get_key(PyObject *self, PyObject *args)
+{
+    char* key = NULL;
+    if(PyArg_ParseTuple(args,"s",&key))
+    {
+        const char* data = pinpoint_get_special_key(key);
+        return Py_BuildValue("s",data);
+    }
+    else
+    {
+        return Py_BuildValue("O",Py_False);
+    }
+}
+
 /**
  * bool check_tracelimit(int64_t timestamp);
 */
@@ -182,35 +215,102 @@ static PyObject *py_pinpoint_enable_utest(PyObject *self, PyObject *args)
     return Py_BuildValue("O",Py_True);
 }
 
-
-static PyObject *py_set_collector_host(PyObject *self, PyObject *args)
+bool set_collector_host(char* host)
 {
-    char* host = NULL;
-    if(PyArg_ParseTuple(args,"s",&host))
+    if(strcasestr(host,"unix") || strcasestr(host,"tcp"))
     {
-        if(strcasestr(host,"unix") || strcasestr(host,"tcp"))
+        if(g_collector_host)
         {
-            if(g_collector_host)
-            {
-                free(g_collector_host);
-                g_collector_host = NULL;
-            }
+            free(g_collector_host);
+            g_collector_host = NULL;
+        }
 
-            g_collector_host = strdup(host);
-            
-            // NOTE: co_host must be protected when writting
-            global_agent_info.get_write_lock();
-            global_agent_info.co_host = g_collector_host;
-            global_agent_info.release_lock(); 
+        g_collector_host = strdup(host);
+        
+        // NOTE: co_host must be protected when writting
+        
+        global_agent_info.co_host = g_collector_host;
 
+        return true;
+    }
+    PyErr_SetString(PyExc_TypeError, "collector_host must start with unix/tcp");
+    return false;
+}
+
+
+static PyObject *py_set_collector(PyObject *self, PyObject *args, PyObject *keywds)
+{
+    // PyObject* setting;
+    bool ret = false;
+    static char *collector_list[] = {"collector_host", "trace_limit", NULL};
+    char* collector_host = "unix:/tmp/collector-agent.sock";
+    long trace_limit = -1;
+    if(PyArg_ParseTupleAndKeywords(args,keywds,"s|l|",collector_list,&collector_host, &trace_limit))
+    {
+
+        global_agent_info.get_write_lock();
+        ret = set_collector_host(collector_host);
+        if( !ret )
+        {
+            goto END_OF_PARSE;
+        }
+
+        global_agent_info.trace_limit = trace_limit;
+        pp_trace("collector_host:%s",collector_host);
+        pp_trace("trace_limit:%ld",trace_limit);
+END_OF_PARSE:
+        global_agent_info.release_lock();
+
+        if( ret == true ){
             return Py_BuildValue("O",Py_True);
         }
-        PyErr_SetString(PyExc_TypeError, "collector_host must start with unix/tcp");
         return NULL;
+
+//         PyObject* py_collector_host = Py_BuildValue("s","collector_host");
+//         PyObject* py_trace_limit = Py_BuildValue("s","trace_limit");
+//         global_agent_info.get_write_lock();
+
+//         if(PyDict_Contains(setting,py_collector_host) == 1)
+//         {
+//             PyObject* py_host = PyDict_GetItem(setting,py_collector_host);
+//             if(PyBytes_Check(py_host))
+//             {
+//                 char* host = strdup(PyBytes_AsString(py_host));
+//                 ret = set_collector_host(host);
+//                 free(host);
+//                 if( !ret )
+//                 {
+//                     goto END_OF_PARSE;
+//                 }
+//             }else{
+//                 PyErr_SetString(PyExc_TypeError, "collector_host must a string");
+//                 goto END_OF_PARSE;
+//             }
+//         }
+
+//         if(PyDict_Contains(setting,py_trace_limit) == 1)
+//         {
+//             PyObject* py_limit = PyDict_GetItem(setting,py_trace_limit);
+//             if(!PyLong_Check(py_limit))
+//             {
+//                 PyErr_SetString(PyExc_TypeError, "trace_limit must a long");
+//                 goto END_OF_PARSE;
+//             }
+//             global_agent_info.trace_limit = PyLong_AsLong(py_limit);
+//         }
+
+//  END_OF_PARSE:
+//         global_agent_info.release_lock();
+//         Py_DECREF(py_collector_host);
+//         Py_DECREF(py_trace_limit);
+//         if( ret == true ){
+//              return Py_BuildValue("O",Py_True);
+//         }
+//         return NULL;
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "collector_host must be a string");
+        PyErr_SetString(PyExc_TypeError, "parameters should be collector_host=\"unix:/tmp/collector-agent.sock or tcp:host:port\",trace_limit=100");
         return NULL;
     }
 }
@@ -239,9 +339,11 @@ static PyMethodDef PinpointMethods[] = {
     {"start_time", py_pinpoint_start_time, METH_NOARGS, "app start time"},
     {"add_clues", py_pinpoint_add_clues, METH_VARARGS, "add trace clues"},
     {"add_clue", py_pinpoint_add_clue, METH_VARARGS, "add trace clue"},
+    {"set_special_key", py_pinpoint_set_key, METH_VARARGS, "set_special_key(key,value)"},
+    {"get_special_key", py_pinpoint_get_key, METH_VARARGS, " value = get_special_key(key)"},
     {"check_tracelimit", py_check_tracelimit, METH_VARARGS, "check trace whether is limit"},
     {"enable_debug", py_pinpoint_enable_utest, METH_VARARGS, "enable logging output(callback )"},
-    {"set_collector_host", py_set_collector_host, METH_VARARGS, "address: unix:/tmp/collector-agent.sock or tcp:host:port"},
+    {"set_collector",(PyCFunction)py_set_collector, METH_VARARGS|METH_KEYWORDS, "collector_host=\"unix:/tmp/collector-agent.sock or tcp:host:port\",trace_limit=100"},
     { NULL, NULL, 0, NULL}
 };
 

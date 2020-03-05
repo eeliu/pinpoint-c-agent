@@ -6,7 +6,7 @@
 #include <cstdio>
 #include <functional>
 #include <iostream>
-
+#include <map>
 #include "common.h"
 #include "TransLayer.h"
 #include "SharedObj.h"
@@ -77,6 +77,26 @@ public:
 
     }
 
+    void setKey(const char*key,const char*value)
+    {
+        const std::string data = value;
+        const std::string tkey = key;
+        std::pair<const std::string,const std::string> pair(tkey,data);
+        this->special_keys.insert(pair);
+    }
+
+    const char* getKey(const char*key)
+    {
+        std::map<const std::string,const std::string>::const_iterator iter  =  this->special_keys.find(key);
+        if(iter != this->special_keys.end())
+        {
+            return iter->second.c_str();
+        }
+        else{
+            return NULL;
+        }
+    }
+
     int32_t endTrace(PerThreadAgent* agent)
     {
         if( this->stack.size() == 1 ) // ancestor node
@@ -104,6 +124,8 @@ public:
             ancestor.node.clear();
             this->stack.pop();
             this->translayer.trans_layer_pool();
+            // after this, specical keys are dropped
+            this->special_keys.clear();
         }
         else if(this->stack.size() > 1) // descendants
         {
@@ -323,6 +345,7 @@ private:
     TransLayer translayer;
     Stack stack;
     Json::FastWriter json_writer;
+    std::map<const std::string,const std::string> special_keys;
 };
 
 
@@ -590,3 +613,22 @@ const char* pinpoint_app_name()
 }
 
 
+void pinpoint_set_special_key(const char* key,const char* value)
+{
+    PerThreadAgent* p_agent = get_agent();
+    if(p_agent == NULL)
+    {
+        return ;
+    }
+    p_agent->setKey(key,value);
+}
+
+const char* pinpoint_get_special_key(const char* key)
+{
+    PerThreadAgent* p_agent = get_agent();
+    if(p_agent == NULL)
+    {
+        return NULL;
+    }
+    return p_agent->getKey(key);
+}

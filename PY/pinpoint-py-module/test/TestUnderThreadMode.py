@@ -11,14 +11,19 @@ class TestUnderThreadMode(TestCase):
         self.thread_running = True
 
     def _test_api_flow(self):
-        self.assertTrue(pinpoint.set_collector_host('unix:/tmp/unexist.sock'))
+        self.assertTrue(pinpoint.set_collector(collector_host='unix:/tmp/unexist.sock'))
         self.assertTrue(pinpoint.enable_debug(None))
 
         while self.thread_running:
             self.assertEqual(pinpoint.start_trace(),1)
+            pinpoint.set_special_key('sid','12345678')
             pinpoint.add_clue("key","value3")
             pinpoint.add_clues("key","value3")
+            value = pinpoint.get_special_key('sid')
+            self.assertEqual(value,'12345678')
             self.assertEqual(pinpoint.end_trace(),0)
+            value = pinpoint.get_special_key('sid')
+            self.assertFalse(value)
 
 
     def test_thead_safe(self):

@@ -16,21 +16,45 @@ TEST(common, trace)
 {
     register_error_cb(cc_log_error_cb);
     enable_trace_utest();
-    
+    pinpoint_set_special_key("key1","1");
     EXPECT_EQ(pinpoint_start_trace(),1);
+    pinpoint_set_special_key("key2","2");
     const char* key = "k1";
     const char* value = "v1";
     pinpoint_add_clue(key,value);
     pinpoint_add_clues(key,value);
     pinpoint_add_clues(key,value);
+    pinpoint_set_special_key("key3","3");
     EXPECT_EQ( pinpoint_start_trace(),2);
+    const char* value3 = pinpoint_get_special_key("key3");
+    EXPECT_STREQ(value3,"3");
+
     key = "k2";
     value = "v2";
     pinpoint_add_clue(key,value);
     pinpoint_add_clues(key,value);
     pinpoint_add_clues(key,value);
     EXPECT_EQ( pinpoint_end_trace(),1);
+    value3 = pinpoint_get_special_key("key3");
+    EXPECT_STREQ(value3,"3");
+
+    value3 = pinpoint_get_special_key("key2");
+    EXPECT_STREQ(value3,"2");
+    
+    value3 = pinpoint_get_special_key("key1");
+    EXPECT_STREQ(value3,"1");
+
     EXPECT_EQ( pinpoint_end_trace(),0);
+
+    value3 = pinpoint_get_special_key("key1");
+    EXPECT_STREQ(value3,NULL);
+
+    value3 = pinpoint_get_special_key("key2");
+    EXPECT_STREQ(value3,NULL);
+
+    value3 = pinpoint_get_special_key("key3");
+    EXPECT_STREQ(value3,NULL);
+
 
 }
 
@@ -70,6 +94,7 @@ TEST(common, fetch_id_name)
     EXPECT_STREQ(app_id,"collector_blocking");
     EXPECT_TRUE(pinpoint_start_time()>0);
 }
+
 
 
 // int mymatch(char *buf)
