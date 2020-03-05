@@ -64,7 +64,7 @@ typedef void (*VOID_FUNC)(void);
 typedef struct pp_agent_s{
     const char* co_host; // tcp:ip:port should support dns
     uint  timeout_ms;  // always be 0
-    int   trace_limit;
+    long   trace_limit;  // change to long as python need long
     int   agent_type;
     uint8_t debug_report;
     VOID_FUNC get_read_lock;
@@ -94,6 +94,8 @@ int32_t pinpoint_start_trace(void);
 int32_t pinpoint_end_trace(void);
 void pinpoint_add_clues(const  char* key,const  char* value);
 void pinpoint_add_clue(const  char* key,const  char* value);
+void pinpoint_set_special_key(const char* key,const char* value);
+const char* pinpoint_get_special_key(const char* key);
 bool check_tracelimit(int64_t timestamp);
 int64_t generate_unique_id(void);
 void pinpoint_drop_trace(void);
