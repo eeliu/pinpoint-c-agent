@@ -28,7 +28,7 @@ class TransLayer{
 enum E_STATE{S_WRITTING,S_READING};
 
 public:
-explicit TransLayer(const PPAgentT &_agent,uint w_timeout_ms):
+explicit TransLayer(const PPAgentT *_agent,uint w_timeout_ms):
     agent(_agent),
     chunks(1024*1024,1024),
     w_timeout_ms(w_timeout_ms),
@@ -213,7 +213,7 @@ private:
     }
 
 private:
-    const PPAgentT &agent;
+    const PPAgentT *agent;
     Chunks        chunks;
     uint          w_timeout_ms;
     E_STATE       _state;

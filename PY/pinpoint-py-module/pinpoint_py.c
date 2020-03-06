@@ -90,7 +90,7 @@ static PyObject *py_check_tracelimit(PyObject *self, PyObject *args)
 {
     int64_t timestamp= -1;
     bool ret;
-    if(! PyArg_ParseTuple(args,"l",&timestamp))
+    if(! PyArg_ParseTuple(args,"|l",&timestamp))
     {
         return NULL;
     }

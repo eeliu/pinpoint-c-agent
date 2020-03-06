@@ -64,7 +64,7 @@ typedef void (*VOID_FUNC)(void);
 typedef struct pp_agent_s{
     const char* co_host; // tcp:ip:port should support dns
     uint  timeout_ms;  // always be 0
-    int   trace_limit;
+    long   trace_limit;  // change to long as python need long
     int   agent_type;
     uint8_t debug_report;
     VOID_FUNC get_read_lock;
