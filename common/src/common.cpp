@@ -45,10 +45,10 @@ public:
 typedef std::stack<TraceNode> Stack;
 class PerThreadAgent{
 public:
-    PerThreadAgent(PPAgentT& agent):
-    timeout_ms(agent.timeout_ms),
-    trace_limit(agent.trace_limit),
-    translayer(TransLayer(agent,agent.timeout_ms)),
+    PerThreadAgent(PPAgentT* agent):
+    timeout_ms(agent->timeout_ms),
+    trace_limit(agent->trace_limit),
+    translayer(TransLayer(agent,agent->timeout_ms)),
     json_writer()
     {
         this->fetal_error_time = 0;
@@ -210,7 +210,7 @@ public:
 
     bool checkTraceLimit(int64_t timestamp)
     {
-        time_t ts = (timestamp == -1) ?(timestamp) :(time(NULL));
+        time_t ts = (timestamp != -1) ?(timestamp) :(time(NULL));
 
         if(this->limit == E_OFFLINE)
         {
@@ -421,7 +421,7 @@ static PerThreadAgent* get_agent()
     void* spec = pthread_getspecific(key);
     if( unlikely(spec == NULL) ){
         try{
-            PerThreadAgent * agent = new PerThreadAgent(global_agent_info);
+            PerThreadAgent * agent = new PerThreadAgent(&global_agent_info);
             spec = (void*)agent;
             pthread_setspecific(key,agent);
         }catch(...){

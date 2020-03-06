@@ -5,7 +5,7 @@ import socketserver
 from plugins.BaseHTTPRequestPlugins import BaseHTTPRequestPlugins
 
 class SimpleWebServer(BaseHTTPRequestHandler):
-
+    @BaseHTTPRequestPlugins()
     def do_GET(self):
         print(self.headers)
         self.send_response(200)
@@ -13,6 +13,7 @@ class SimpleWebServer(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(bytes('true',encoding='utf-8'))
 
+    @BaseHTTPRequestPlugins()
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])  
         post_data = self.rfile.read(content_length)

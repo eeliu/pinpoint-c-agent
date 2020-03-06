@@ -110,10 +110,10 @@ size_t TransLayer::trans_layer_pool()
 {
     if(c_fd  == -1 )
     {
-        this->agent.get_read_lock();
-        pp_trace("agent try to connect:(%s)",this->agent.co_host);
-        connect_remote(this->agent.co_host);
-        this->agent.release_lock();
+        this->agent->get_read_lock();
+        pp_trace("agent try to connect:(%s)",this->agent->co_host);
+        connect_remote(this->agent->co_host);
+        this->agent->release_lock();
         
         if(c_fd == -1)
         {
@@ -171,7 +171,7 @@ ERROR:
     // TODO share the offline
     // agent.limit = E_OFFLINE;
 
-    connect_remote(this->agent.co_host);
+    connect_remote(this->agent->co_host);
     return -1;
 }
 

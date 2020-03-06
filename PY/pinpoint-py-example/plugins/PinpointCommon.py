@@ -1,16 +1,16 @@
 ﻿import pinpoint
 import random
 
-PYTHON = 1700
-PYTHON_METHOD_CALL=1701
-PYTHON_REMOTE_METHOD = 9900
+PYTHON = '1700'
+PYTHON_METHOD_CALL='1701'
+PYTHON_REMOTE_METHOD = '9900'
 
 ###############################################################
 
 # user should set below before use
 APP_ID ='python-app-id' # application id
 APP_NAME ='python-app-name' # application name 
-
+COLLECTOR_HOST='unix:/tmp/collector-agent.sock'
 
 ###############################################################
 PINPOINT_PSPANID = 'HTTP_PINPOINT_PSPANID'
@@ -22,7 +22,7 @@ PINPOINT_HOST = 'HTTP_PINPOINT_HOST'
 NGINX_PROXY = 'Pinpoint-ProxyNginx'
 APACHE_PROXY = 'HTTP_PINPOINT_PROXYAPACHE'
 SAMPLED = 'Pinpoint-Sampled'
-pinpoint.set_collector(collector_host='unix:/tmp/collector-agent.sock')
+pinpoint.set_collector(collector_host=COLLECTOR_HOST)
 
 
 class Candy(object):
@@ -40,11 +40,12 @@ class Candy(object):
     def __call__(self, func):
         def pinpointTrace(*args, **kwargs):
             ret = None
+            self.onBefore(*args, **kwargs)
             try:
-                self.onBefore(*args, **kwargs)
                 ret = func(*args, **kwargs)
             except Exception as e:
                 self.onException(e)
+                print(e)
             finally:
                 return self.onEnd(ret)
         return pinpointTrace
@@ -52,7 +53,7 @@ class Candy(object):
     def generateTid(self):
         return ('%s^%s^%s') % (APP_ID,str(pinpoint.start_time()), str(pinpoint.unique_id()))
     def generateSid(self):
-        return random.randint(0,2147483647)
+        return str(random.randint(0,2147483647))
 
 
 if __name__ == '__main__':
