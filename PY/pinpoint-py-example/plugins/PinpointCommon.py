@@ -22,15 +22,45 @@ PINPOINT_HOST = 'HTTP_PINPOINT_HOST'
 NGINX_PROXY = 'Pinpoint-ProxyNginx'
 APACHE_PROXY = 'HTTP_PINPOINT_PROXYAPACHE'
 SAMPLED = 'Pinpoint-Sampled'
+ServerType='stp'
+FuncName='name'
+PY_ARGS= '-1'
+PY_RETURN='14'
+PROXY_HTTP_HEADER=300
+SQL_ID = 20
+SQL=21
+SQL_METADATA=22
+SQL_PARAM=  23
+SQL_BINDVALUE=24
+STRING_ID=30
+HTTP_URL=40
+HTTP_PARAM=41
+HTTP_PARAM_ENTITY=42
+HTTP_COOKIE=45
+HTTP_STATUS_CODE=46
+HTTP_INTERNAL_DISPLAY=48
+HTTP_IO=49
+MESSAGE_QUEUE_URI=100
+
+
+MYSQL='2101'
+REDIS='8200'
+REDIS_REDISSON='8203'
+REDIS_REDISSON_INTERNAL='8204'
+MEMCACHED='8050'
 pinpoint.set_collector(collector_host=COLLECTOR_HOST)
 
-
 class Candy(object):
+    def __init__(self,class_name,module_name):
+        self.class_name = class_name
+        self.module_name = module_name
+
 
     def onBefore(self,*args, **kwargs):
         pinpoint.start_trace()
         pinpoint.add_clue('appname',APP_NAME)
         pinpoint.add_clue('appid', APP_ID)
+
     def onEnd(self,ret):
         pinpoint.end_trace()
 
@@ -38,6 +68,7 @@ class Candy(object):
         raise NotImplementedError()
 
     def __call__(self, func):
+        self.func_name=func.__name__
         def pinpointTrace(*args, **kwargs):
             ret = None
             self.onBefore(*args, **kwargs)
@@ -48,13 +79,18 @@ class Candy(object):
                 print(e)
             finally:
                 return self.onEnd(ret)
-        return pinpointTrace
 
     def generateTid(self):
         return ('%s^%s^%s') % (APP_ID,str(pinpoint.start_time()), str(pinpoint.unique_id()))
+
     def generateSid(self):
         return str(random.randint(0,2147483647))
 
+    def getFuncUniqueName(self):
+        if self.class_name:
+            return '%s/%s.%s'%(self.module_name,self.class_name,self.func_name)
+        else:
+            return '%s/%s'%(self.module_name,self.func_name)
 
 if __name__ == '__main__':
 

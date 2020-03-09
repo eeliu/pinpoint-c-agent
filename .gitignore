@@ -22,3 +22,5 @@ cmake-build-debug
 *.gcda
 *.gcno
 core.*
+.gdb_history
+__pycache__/

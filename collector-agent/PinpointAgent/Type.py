@@ -53,9 +53,7 @@ STRING_META_DATA = 330
 RESULT = 320
 TVERSION = 0
 PROXY_HTTP_HEADER = 300
-PHP_RETURN = 921
-PHP_ARGS = 922
-PHP_DESCRIPTION = 923
+
 
 # ------------------------------------------------------------------------------
 #  Copyright  2020. NAVER Corp.

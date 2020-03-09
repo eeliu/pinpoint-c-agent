@@ -102,6 +102,7 @@ class GrpcAgentImplement(PinpointAgent):
     def _sendSpan(self, spanMsg):
 
         self.span_sender_list[0].sendSpan(spanMsg)
+        TCLogger.debug(spanMsg)
         return True
 
     def sendSpan(self, stack, body):
@@ -109,7 +110,7 @@ class GrpcAgentImplement(PinpointAgent):
             pSpan = self.span_factory.makeSpan(stack)
             spanMesg = PSpanMessage(span=pSpan)
         except Exception as e:
-            TCLogger.warn(" interrupted by %s",e)
+            TCLogger.warn("interrupted by %s",e)
             return False
         if self._sendSpan(spanMesg):
             return True

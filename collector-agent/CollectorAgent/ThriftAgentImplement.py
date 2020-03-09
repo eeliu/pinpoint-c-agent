@@ -85,7 +85,7 @@ class ThriftAgentImplement(PinpointAgent):
         self.string_metas = {}
         self.span_factory = ThriftSpanFactory(self)
 
-    ## expose to other module
+    ## expose to other modules
     def sendMsgToCollector(self, msg):
         if self.socketCode == AgentSocketCode.NONE:  ## channel not ready
             TCLogger.debug("AgentState not ready,postpone size:%d", len(msg))

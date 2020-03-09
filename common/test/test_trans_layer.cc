@@ -76,7 +76,7 @@ TEST(translayer, unix_socket_layer)
         exit(0);
     }
 
-    TransLayer layer(global_agent_info,10);
+    TransLayer layer(&global_agent_info,10);
     using namespace std::placeholders;
     layer.registerPeerMsgCallback(std::bind(handle_agent_info,_1,_2,_3));
     while(run){

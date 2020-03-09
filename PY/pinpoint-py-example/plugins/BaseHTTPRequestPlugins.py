@@ -7,7 +7,8 @@ from http.server import BaseHTTPRequestHandler
 import pinpoint
 
 class BaseHTTPRequestPlugins(Candy):
-    def __init__(self):
+    def __init__(self,class_name,module_name):
+        super().__init__(class_name,module_name)
         self.isLimit = False
 
     def onBefore(self,*args, **kwargs):
@@ -83,4 +84,5 @@ class BaseHTTPRequestPlugins(Candy):
 
     def onException(self, e):
         pinpoint.add_clue('EXP',e)
+        raise e
         # do something

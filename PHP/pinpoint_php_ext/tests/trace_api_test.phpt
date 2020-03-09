@@ -61,76 +61,76 @@ echo pinpoint_end_trace()."\n";
 [pinpoint] [%d] pinpoint_start start
 2
 [pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] key:1 value:234,3432
-[pinpoint] [%d] key:2 value:234
+[pinpoint] [%d] add clues:1:234,3432
+[pinpoint] [%d] add clues:2:234
 [pinpoint] [%d] pinpoint_end_trace Done!
 1
 [pinpoint] [%d] pinpoint_start start
 2
 [pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] key:1 value:234,3432
-[pinpoint] [%d] key:2 value:234
+[pinpoint] [%d] add clues:1:234,3432
+[pinpoint] [%d] add clues:2:234
 [pinpoint] [%d] pinpoint_end_trace Done!
 1
 [pinpoint] [%d] pinpoint_start start
 2
 [pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] key:1 value:234,3432
-[pinpoint] [%d] key:2 value:234
+[pinpoint] [%d] add clues:1:234,3432
+[pinpoint] [%d] add clues:2:234
 [pinpoint] [%d] pinpoint_end_trace Done!
 1
 [pinpoint] [%d] pinpoint_start start
 2
 [pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] key:1 value:234,3432
-[pinpoint] [%d] key:2 value:234
+[pinpoint] [%d] add clues:1:234,3432
+[pinpoint] [%d] add clues:2:234
 [pinpoint] [%d] pinpoint_end_trace Done!
 1
 [pinpoint] [%d] pinpoint_start start
 2
 [pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] key:1 value:234,3432
-[pinpoint] [%d] key:2 value:234
+[pinpoint] [%d] add clues:1:234,3432
+[pinpoint] [%d] add clues:2:234
 [pinpoint] [%d] pinpoint_end_trace Done!
 1
 [pinpoint] [%d] pinpoint_start start
 2
 [pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] key:1 value:234,3432
-[pinpoint] [%d] key:2 value:234
+[pinpoint] [%d] add clues:1:234,3432
+[pinpoint] [%d] add clues:2:234
 [pinpoint] [%d] pinpoint_end_trace Done!
 1
 [pinpoint] [%d] pinpoint_start start
 2
 [pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] key:1 value:234,3432
-[pinpoint] [%d] key:2 value:234
+[pinpoint] [%d] add clues:1:234,3432
+[pinpoint] [%d] add clues:2:234
 [pinpoint] [%d] pinpoint_end_trace Done!
 1
 [pinpoint] [%d] pinpoint_start start
 2
 [pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] key:1 value:234,3432
-[pinpoint] [%d] key:2 value:234
+[pinpoint] [%d] add clues:1:234,3432
+[pinpoint] [%d] add clues:2:234
 [pinpoint] [%d] pinpoint_end_trace Done!
 1
 [pinpoint] [%d] pinpoint_start start
 2
 [pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] key:1 value:234,3432
-[pinpoint] [%d] key:2 value:234
+[pinpoint] [%d] add clues:1:234,3432
+[pinpoint] [%d] add clues:2:234
 [pinpoint] [%d] pinpoint_end_trace Done!
 1
 [pinpoint] [%d] pinpoint_start start
 2
 [pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] key:1 value:234,3432
-[pinpoint] [%d] key:2 value:234
+[pinpoint] [%d] add clues:1:234,3432
+[pinpoint] [%d] add clues:2:234
 [pinpoint] [%d] pinpoint_end_trace Done!
 1
 [pinpoint] [%d] key:args value:a,$b
 [pinpoint] [%d] key:ret value:a,$b
-[pinpoint] [%d] this span:({"E":%d,"FT":1500,"S":%d,"args":"a,$b","calls":[{"1":"234,3432","2":"234","E":%d,"S":%d,"name":"Foo"},{"1":"234,3432","2":"234","E":%d,"S":%d,"name":"Foo"},{"1":"234,3432","2":"234","E":%d,"S":%d,"name":"Foo"},{"1":"234,3432","2":"234","E":%d,"S":%d,"name":"Foo"},{"1":"234,3432","2":"234","E":%d,"S":%d,"name":"Foo"},{"1":"234,3432","2":"234","E":%d,"S":%d,"name":"Foo"},{"1":"234,3432","2":"234","E":%d,"S":%d,"name":"Foo"},{"1":"234,3432","2":"234","E":%d,"S":%d,"name":"Foo"},{"1":"234,3432","2":"234","E":%d,"S":%d,"name":"Foo"},{"1":"234,3432","2":"234","E":%d,"S":%d,"name":"Foo"}],"name":"ouput_234","ret":"a,$b"})
+[pinpoint] [%d] this span:({"E":%d,"FT":1500,"S":%d,"args":"a,$b","calls":[{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"}],"name":"ouput_234","ret":"a,$b"})
 [pinpoint] [%d] agent try to connect:(unix:/unexist_file.sock)
 [pinpoint] [%d] connect:(/unexist_file.sock) failed as (No such file or directory)
 [pinpoint] [%d] pinpoint_end_trace Done!
