@@ -70,6 +70,7 @@ class AppManagement(object):
     def handleFrontAgentData(self, client, type, body):
         content = body.decode('utf-8')
         try:
+            TCLogger.debug(content)
             stack = json.loads(content)
         except Exception as e:
             TCLogger.error("json is crash")

@@ -330,20 +330,20 @@ static void free_pinpoint_module(void * module)
 
 /* Module method table */
 static PyMethodDef PinpointMethods[] = {
-    {"start_trace", py_pinpoint_start_trace, METH_NOARGS, "star trace"},
-    {"end_trace", py_pinpoint_end_trace, METH_NOARGS, "stop trace"},
-    {"unique_id", py_generate_unique_id, METH_NOARGS, "return unique_id"},
-    {"drop_trace", py_pinpoint_drop_trace, METH_NOARGS, "drop current trace"},
-    {"app_id", py_pinpoint_app_id, METH_NOARGS, "default app id"},
-    {"app_name", py_pinpoint_app_name, METH_NOARGS, "default app name"},
-    {"start_time", py_pinpoint_start_time, METH_NOARGS, "app start time"},
-    {"add_clues", py_pinpoint_add_clues, METH_VARARGS, "add trace clues"},
-    {"add_clue", py_pinpoint_add_clue, METH_VARARGS, "add trace clue"},
-    {"set_special_key", py_pinpoint_set_key, METH_VARARGS, "set_special_key(key,value)"},
-    {"get_special_key", py_pinpoint_get_key, METH_VARARGS, " value = get_special_key(key)"},
-    {"check_tracelimit", py_check_tracelimit, METH_VARARGS, "check trace whether is limit"},
+    {"start_trace", py_pinpoint_start_trace, METH_NOARGS, "def start_trace():# create a new trace and insert into trace chain"},
+    {"end_trace", py_pinpoint_end_trace, METH_NOARGS, "def end_trace():# end currently matched trace"},
+    {"unique_id", py_generate_unique_id, METH_NOARGS, "def unique_id()-> long"},
+    {"drop_trace", py_pinpoint_drop_trace, METH_NOARGS, "def drop_trace():# drop this trace"},
+    {"app_id", py_pinpoint_app_id, METH_NOARGS, "def app_id()->string"},
+    {"app_name", py_pinpoint_app_name, METH_NOARGS, "def app_name()->string"},
+    {"start_time", py_pinpoint_start_time, METH_NOARGS, "def start_time()->long"},
+    {"add_clues", py_pinpoint_add_clues, METH_VARARGS, "def add_clues(string key,string value)"},
+    {"add_clue", py_pinpoint_add_clue, METH_VARARGS, "def add_clue(string key,string value)"},
+    {"set_special_key", py_pinpoint_set_key, METH_VARARGS, "def set_special_key(string key,string value): # create a key-value pair that bases on current trace chain"},
+    {"get_special_key", py_pinpoint_get_key, METH_VARARGS, "def get_special_key(key)->string "},
+    {"check_tracelimit", py_check_tracelimit, METH_VARARGS, "check_tracelimit(long timestamp): check trace whether is limit"},
     {"enable_debug", py_pinpoint_enable_utest, METH_VARARGS, "enable logging output(callback )"},
-    {"set_collector",(PyCFunction)py_set_collector, METH_VARARGS|METH_KEYWORDS, "collector_host=\"unix:/tmp/collector-agent.sock or tcp:host:port\",trace_limit=100"},
+    {"set_collector",(PyCFunction)py_set_collector, METH_VARARGS|METH_KEYWORDS, "def set_collector(collector_host=\"unix:/tmp/collector-agent.sock or tcp:host:port\",trace_limit=100)"},
     { NULL, NULL, 0, NULL}
 };
 
@@ -351,7 +351,7 @@ static PyMethodDef PinpointMethods[] = {
 static struct PyModuleDef pinpointmodule = {
     PyModuleDef_HEAD_INIT,
     "pinpoint",           /* name of module */
-    "An agent for pinpoint platform",  /* Doc string (may be NULL) */
+    "python agent for pinpoint platform",  /* Doc string (may be NULL) */
     -1,                 /* Size of per-interpreter state or -1 */
     PinpointMethods,       /* Method table */
     NULL,

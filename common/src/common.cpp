@@ -202,7 +202,7 @@ public:
             cvalue+=':';
             cvalue+=value;
             curNode[CLUSE].append(cvalue);
-            pp_trace("cluse:%s",curNode[CLUSE].asCString());
+            pp_trace("add clues:%s:%s",key,value);
         }else{
            pp_trace("%d: stack is empty,error found.",__LINE__);
         }
@@ -524,7 +524,7 @@ void pinpoint_add_clues(const  char* key, const char* value)
     {
         return ;
     }
-    return p_agent->AddClue(key,value);
+    return p_agent->AddClues(key,value);
 }
 
 /**
