@@ -99,6 +99,7 @@ class Candy(object):
                 print(e)
             finally:
                 return self.onEnd(ret)
+        return pinpointTrace
 
     def generateTid(self):
         return ('%s^%s^%s') % (APP_ID,str(pinpoint.start_time()), str(pinpoint.unique_id()))
@@ -114,7 +115,7 @@ class Candy(object):
 
 if __name__ == '__main__':
 
-    @Candy()
+    @Candy('main',__name__)
     def run():
         print("run")
 
