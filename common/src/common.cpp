@@ -371,13 +371,26 @@ private:
 
 
 #define getOSPid getpid
-pthread_key_t key;
-pthread_once_t init_done = PTHREAD_ONCE_INIT;
-pthread_rwlock_t rwlock = PTHREAD_RWLOCK_INITIALIZER;
+static pthread_key_t key;
+static pthread_once_t init_done = PTHREAD_ONCE_INIT;
+static pthread_rwlock_t rwlock = PTHREAD_RWLOCK_INITIALIZER;
+static pthread_mutex_t  thread_agent_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
 static void _init_common_shared() __attribute__((constructor));
 static void _free_common_shared() __attribute__((destructor));
 static void thread_init(void);
 static void free_agent(void *agent);
+
+static std::stack<PerThreadAgent*> agentPool;
+static inline void lock_agent_pool()
+{
+    pthread_mutex_lock(&thread_agent_pool_mutex);
+}
+
+static inline void unlock_agent_pool()
+{
+    pthread_mutex_unlock(&thread_agent_pool_mutex);
+}
+
 
 
 static void _get_read_lock()
@@ -434,23 +447,46 @@ void register_error_cb(log_error_cb error_cb)
 static PerThreadAgent* get_agent()
 {
     void* spec = pthread_getspecific(key);
-    if( unlikely(spec == NULL) ){
-        try{
-            PerThreadAgent * agent = new PerThreadAgent(&global_agent_info);
-            spec = (void*)agent;
-            pthread_setspecific(key,agent);
-        }catch(...){
-            pp_trace("create PerThreadAgent failed");
-            return NULL;
+    if( unlikely(spec == NULL) )
+    {
+
+        lock_agent_pool();
+        if(agentPool.empty())
+        {
+            unlock_agent_pool();
+            try{
+                PerThreadAgent * agent = new PerThreadAgent(&global_agent_info);
+                pthread_setspecific(key,agent);
+                return agent;
+            }catch(...){
+                pp_trace("create PerThreadAgent failed");
+                return NULL;
+            }
+        }else
+        {
+            PerThreadAgent * agent =agentPool.top();
+            agentPool.pop();
+            unlock_agent_pool();
+            if(agent == NULL)
+            {
+                pp_trace("Found an error:%s:%d",__FILE__,__LINE__);
+                return NULL;
+            }
+            return agent;
         }
+    }else
+    {
+        return static_cast<PerThreadAgent*>(spec);
     }
-    return static_cast<PerThreadAgent*>(spec);
 }
 
 void free_agent(void *agent)
 {
     if(agent){
-        delete static_cast<PerThreadAgent*>(agent);
+        lock_agent_pool();
+        agentPool.push(static_cast<PerThreadAgent*>(agent));
+        unlock_agent_pool();
+        pp_trace("agentPool size:%d",agentPool.size());
     }
 }
 
