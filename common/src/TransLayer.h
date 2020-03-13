@@ -71,6 +71,13 @@ explicit TransLayer(const PPAgentT *_agent,uint w_timeout_ms):
         }
     }
 
+    ~TransLayer()
+    {
+        if(this->c_fd != -1)
+        {
+            close(this->c_fd);
+        }
+    }
 
 #ifdef UTEST
 
