@@ -70,6 +70,11 @@ REDIS_REDISSON_INTERNAL='8204'
 MEMCACHED='8050'
 pinpoint.set_collector(collector_host=COLLECTOR_HOST)
 
+def output(msg):
+    print(msg)
+
+pinpoint.enable_debug(output)
+
 class Candy(object):
     def __init__(self,class_name,module_name):
         self.class_name = class_name
@@ -94,11 +99,12 @@ class Candy(object):
             self.onBefore(*args, **kwargs)
             try:
                 ret = func(*args, **kwargs)
+                return ret
             except Exception as e:
                 self.onException(e)
-                print(e)
+                raise e
             finally:
-                return self.onEnd(ret)
+                self.onEnd(ret)
         return pinpointTrace
 
     def generateTid(self):
@@ -109,9 +115,9 @@ class Candy(object):
 
     def getFuncUniqueName(self):
         if self.class_name:
-            return '%s/%s.%s'%(self.module_name,self.class_name,self.func_name)
+            return '%s\%s.%s'%(self.module_name,self.class_name,self.func_name)
         else:
-            return '%s/%s'%(self.module_name,self.func_name)
+            return '%s\%s'%(self.module_name,self.func_name)
 
 if __name__ == '__main__':
 

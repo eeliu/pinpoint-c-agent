@@ -19,11 +19,14 @@
 # ------------------------------------------------------------------------------
 
 
-from plugins.PinpointCommon import *
-from http.server import BaseHTTPRequestHandler
 import pinpoint
+from plugins.PinpointCommon import *
+from flask import Flask,Request
+import threading
 
-class BaseHTTPRequestPlugins(Candy):
+
+
+class BaseFlaskPlugins(Candy):
     def __init__(self,class_name,module_name):
         super().__init__(class_name,module_name)
         self.isLimit = False
@@ -31,60 +34,61 @@ class BaseHTTPRequestPlugins(Candy):
     def onBefore(self,*args, **kwargs):
         super().onBefore(*args, **kwargs)
         ###############################################################
+        print(threading.currentThread().ident)
         print("------------------- call before -----------------------")
-        insBaseHttp = args[0]
-        assert isinstance(insBaseHttp,BaseHTTPRequestHandler)
-        pinpoint.add_clue('name', 'BaseHTTPRequest request')
-        pinpoint.add_clue('uri',insBaseHttp.path)
-        pinpoint.add_clue('client',insBaseHttp.client_address[0])
-        pinpoint.add_clue('server',insBaseHttp.headers.get('Host'))
-        pinpoint.add_clue('stp',PYTHON)
+        # insFlask = args[0]
+        # assert isinstance(insFlask, Flask)
+        request = Request(args[1])
+        pinpoint.add_clue('name', 'BaseFlaskrequest')
+        pinpoint.add_clue('uri', request.path)
+        pinpoint.add_clue('client',request.remote_addr)
+        pinpoint.add_clue('server', request.host)
+        pinpoint.add_clue('stp', PYTHON)
 
-        if PINPOINT_PSPANID in insBaseHttp.headers:
-            pinpoint.add_clue('psid',insBaseHttp.headers[PINPOINT_PSPANID])
-            print("PINPOINT_PSPANID:",insBaseHttp.headers[PINPOINT_PSPANID])
+        if PINPOINT_PSPANID in request.headers:
+            pinpoint.add_clue('psid', request.headers[PINPOINT_PSPANID])
+            print("PINPOINT_PSPANID:", request.headers[PINPOINT_PSPANID])
         
-        if PINPOINT_SPANID in insBaseHttp.headers:
-            self.sid = insBaseHttp.headers[PINPOINT_SPANID]
+        if PINPOINT_SPANID in request.headers:
+            self.sid = request.headers[PINPOINT_SPANID]
         else:
             self.sid = self.generateSid()
-        pinpoint.set_special_key('sid',self.sid)
-        
+        pinpoint.set_special_key('sid', self.sid)
 
-        if PINPOINT_TRACEID in insBaseHttp.headers:
-            self.tid = insBaseHttp.headers[PINPOINT_TRACEID]
+        if PINPOINT_TRACEID in request.headers:
+            self.tid = request.headers[PINPOINT_TRACEID]
         else:
             self.tid = self.generateTid()
         pinpoint.set_special_key('tid',self.tid)
 
-        if PINPOINT_PAPPNAME in insBaseHttp.headers:
-            self.pname = insBaseHttp.headers[PINPOINT_PAPPNAME]
+        if PINPOINT_PAPPNAME in request.headers:
+            self.pname = request.headers[PINPOINT_PAPPNAME]
             pinpoint.set_special_key('pname',self.pname)
             pinpoint.add_clue('pname',self.pname)
 
-        if PINPOINT_PAPPTYPE in insBaseHttp.headers:
-            self.ptype = insBaseHttp.headers[PINPOINT_PAPPTYPE]
+        if PINPOINT_PAPPTYPE in request.headers:
+            self.ptype = request.headers[PINPOINT_PAPPTYPE]
             pinpoint.set_special_key('ptype',self.ptype)
             pinpoint.add_clue('ptype',self.ptype)
 
-        if PINPOINT_HOST in insBaseHttp.headers:
-            self.Ah = insBaseHttp.headers[PINPOINT_PAPPTYPE]
+        if PINPOINT_HOST in request.headers:
+            self.Ah = request.headers[PINPOINT_PAPPTYPE]
             pinpoint.set_special_key('Ah',self.Ah)
             pinpoint.add_clue('Ah',self.Ah)
         
-        if NGINX_PROXY in insBaseHttp.headers:
-            pinpoint.add_clue('NP',insBaseHttp.headers[NGINX_PROXY])
+        if NGINX_PROXY in request.headers:
+            pinpoint.add_clue('NP',request.headers[NGINX_PROXY])
         
-        if APACHE_PROXY in insBaseHttp.headers:
-            pinpoint.add_clue('AP',insBaseHttp.headers[APACHE_PROXY])
+        if APACHE_PROXY in request.headers:
+            pinpoint.add_clue('AP',request.headers[APACHE_PROXY])
 
-        if SAMPLED in insBaseHttp.headers:
-            if insBaseHttp.headers[SAMPLED] == 's0':
+        if SAMPLED in request.headers:
+            if request.headers[SAMPLED] == 's0':
                 self.isLimit = True
                 pinpoint.drop_trace()
         else:
-            self.isLimit = pinpoint.check_tracelimit()
-
+            # self.isLimit = pinpoint.check_tracelimit()
+            print(self.isLimit)
         pinpoint.add_clue('tid',self.tid)
         pinpoint.add_clue('sid',self.sid)
         ###############################################################
@@ -100,5 +104,6 @@ class BaseHTTPRequestPlugins(Candy):
         return ret
 
     def onException(self, e):
-        pinpoint.add_clue('EXP',str(e))
+        pinpoint.add_clue('EXP',e)
+        raise e
         # do something
