@@ -29,12 +29,15 @@ func_cp_common()
 
 func_build_agent()
 {
-    echo "start build_agent ..."
+    python setup.py install
 }
 
 func_clean_last_build()
 {
-    echo "clean last build ..."
+    cd $PHP_EXT_DIR
+    if test -d "build"; then
+       rm build -r
+    fi
 }
 
 main()

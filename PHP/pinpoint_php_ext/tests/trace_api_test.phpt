@@ -53,85 +53,85 @@ echo pinpoint_end_trace()."\n";
 
 ?>
 --EXPECTF--
-[pinpoint] [%d] pinpoint_start start
-[pinpoint] [%d] agent try to connect:(unix:/unexist_file.sock)
-[pinpoint] [%d] connect:(/unexist_file.sock) failed as (No such file or directory)
+[pinpoint] [%d] [%d]pinpoint_start start
+[pinpoint] [%d] [%d]agent try to connect:(unix:/unexist_file.sock)
+[pinpoint] [%d] [%d]connect:(/unexist_file.sock) failed as (No such file or directory)
 1
-[pinpoint] [%d] key:name value:ouput_234
-[pinpoint] [%d] pinpoint_start start
+[pinpoint] [%d] [%d]key:name value:ouput_234
+[pinpoint] [%d] [%d]pinpoint_start start
 2
-[pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] add clues:1:234,3432
-[pinpoint] [%d] add clues:2:234
-[pinpoint] [%d] pinpoint_end_trace Done!
+[pinpoint] [%d] [%d]key:name value:Foo
+[pinpoint] [%d] [%d]add clues:1:234,3432
+[pinpoint] [%d] [%d]add clues:2:234
+[pinpoint] [%d] [%d]pinpoint_end_trace Done!
 1
-[pinpoint] [%d] pinpoint_start start
+[pinpoint] [%d] [%d]pinpoint_start start
 2
-[pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] add clues:1:234,3432
-[pinpoint] [%d] add clues:2:234
-[pinpoint] [%d] pinpoint_end_trace Done!
+[pinpoint] [%d] [%d]key:name value:Foo
+[pinpoint] [%d] [%d]add clues:1:234,3432
+[pinpoint] [%d] [%d]add clues:2:234
+[pinpoint] [%d] [%d]pinpoint_end_trace Done!
 1
-[pinpoint] [%d] pinpoint_start start
+[pinpoint] [%d] [%d]pinpoint_start start
 2
-[pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] add clues:1:234,3432
-[pinpoint] [%d] add clues:2:234
-[pinpoint] [%d] pinpoint_end_trace Done!
+[pinpoint] [%d] [%d]key:name value:Foo
+[pinpoint] [%d] [%d]add clues:1:234,3432
+[pinpoint] [%d] [%d]add clues:2:234
+[pinpoint] [%d] [%d]pinpoint_end_trace Done!
 1
-[pinpoint] [%d] pinpoint_start start
+[pinpoint] [%d] [%d]pinpoint_start start
 2
-[pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] add clues:1:234,3432
-[pinpoint] [%d] add clues:2:234
-[pinpoint] [%d] pinpoint_end_trace Done!
+[pinpoint] [%d] [%d]key:name value:Foo
+[pinpoint] [%d] [%d]add clues:1:234,3432
+[pinpoint] [%d] [%d]add clues:2:234
+[pinpoint] [%d] [%d]pinpoint_end_trace Done!
 1
-[pinpoint] [%d] pinpoint_start start
+[pinpoint] [%d] [%d]pinpoint_start start
 2
-[pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] add clues:1:234,3432
-[pinpoint] [%d] add clues:2:234
-[pinpoint] [%d] pinpoint_end_trace Done!
+[pinpoint] [%d] [%d]key:name value:Foo
+[pinpoint] [%d] [%d]add clues:1:234,3432
+[pinpoint] [%d] [%d]add clues:2:234
+[pinpoint] [%d] [%d]pinpoint_end_trace Done!
 1
-[pinpoint] [%d] pinpoint_start start
+[pinpoint] [%d] [%d]pinpoint_start start
 2
-[pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] add clues:1:234,3432
-[pinpoint] [%d] add clues:2:234
-[pinpoint] [%d] pinpoint_end_trace Done!
+[pinpoint] [%d] [%d]key:name value:Foo
+[pinpoint] [%d] [%d]add clues:1:234,3432
+[pinpoint] [%d] [%d]add clues:2:234
+[pinpoint] [%d] [%d]pinpoint_end_trace Done!
 1
-[pinpoint] [%d] pinpoint_start start
+[pinpoint] [%d] [%d]pinpoint_start start
 2
-[pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] add clues:1:234,3432
-[pinpoint] [%d] add clues:2:234
-[pinpoint] [%d] pinpoint_end_trace Done!
+[pinpoint] [%d] [%d]key:name value:Foo
+[pinpoint] [%d] [%d]add clues:1:234,3432
+[pinpoint] [%d] [%d]add clues:2:234
+[pinpoint] [%d] [%d]pinpoint_end_trace Done!
 1
-[pinpoint] [%d] pinpoint_start start
+[pinpoint] [%d] [%d]pinpoint_start start
 2
-[pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] add clues:1:234,3432
-[pinpoint] [%d] add clues:2:234
-[pinpoint] [%d] pinpoint_end_trace Done!
+[pinpoint] [%d] [%d]key:name value:Foo
+[pinpoint] [%d] [%d]add clues:1:234,3432
+[pinpoint] [%d] [%d]add clues:2:234
+[pinpoint] [%d] [%d]pinpoint_end_trace Done!
 1
-[pinpoint] [%d] pinpoint_start start
+[pinpoint] [%d] [%d]pinpoint_start start
 2
-[pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] add clues:1:234,3432
-[pinpoint] [%d] add clues:2:234
-[pinpoint] [%d] pinpoint_end_trace Done!
+[pinpoint] [%d] [%d]key:name value:Foo
+[pinpoint] [%d] [%d]add clues:1:234,3432
+[pinpoint] [%d] [%d]add clues:2:234
+[pinpoint] [%d] [%d]pinpoint_end_trace Done!
 1
-[pinpoint] [%d] pinpoint_start start
+[pinpoint] [%d] [%d]pinpoint_start start
 2
-[pinpoint] [%d] key:name value:Foo
-[pinpoint] [%d] add clues:1:234,3432
-[pinpoint] [%d] add clues:2:234
-[pinpoint] [%d] pinpoint_end_trace Done!
+[pinpoint] [%d] [%d]key:name value:Foo
+[pinpoint] [%d] [%d]add clues:1:234,3432
+[pinpoint] [%d] [%d]add clues:2:234
+[pinpoint] [%d] [%d]pinpoint_end_trace Done!
 1
-[pinpoint] [%d] key:args value:a,$b
-[pinpoint] [%d] key:ret value:a,$b
-[pinpoint] [%d] this span:({"E":%d,"FT":1500,"S":%d,"args":"a,$b","calls":[{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"}],"name":"ouput_234","ret":"a,$b"})
-[pinpoint] [%d] agent try to connect:(unix:/unexist_file.sock)
-[pinpoint] [%d] connect:(/unexist_file.sock) failed as (No such file or directory)
-[pinpoint] [%d] pinpoint_end_trace Done!
+[pinpoint] [%d] [%d]key:args value:a,$b
+[pinpoint] [%d] [%d]key:ret value:a,$b
+[pinpoint] [%d] [%d]this span:({"E":%d,"FT":1500,"S":%d,"args":"a,$b","calls":[{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"},{"E":%d,"S":%d,"clues":["1:234,3432","2:234"],"name":"Foo"}],"name":"ouput_234","ret":"a,$b"})
+[pinpoint] [%d] [%d]agent try to connect:(unix:/unexist_file.sock)
+[pinpoint] [%d] [%d]connect:(/unexist_file.sock) failed as (No such file or directory)
+[pinpoint] [%d] [%d]pinpoint_end_trace Done!
 0

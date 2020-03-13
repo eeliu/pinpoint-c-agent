@@ -164,12 +164,14 @@ size_t TransLayer::trans_layer_pool()
 
         if(FD_ISSET(fd,&wfds)){
             if(send_msg_to_collector() == -1){
+                pp_trace("send_msg_to_collector error");
                 goto ERROR;
             }
         }
 
         if(FD_ISSET(fd,&rfds)){
             if(recv_msg_from_collector() == -1){
+                pp_trace("recv_msg_from_collector error");
                 goto ERROR;
             }
         }

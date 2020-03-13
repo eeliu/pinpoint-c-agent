@@ -17,7 +17,6 @@
 // Created by Bluse on 1/3/2020.
 //
 
-#include <stdarg.h>
 #include <cstdio>
 #include <functional>
 #include <iostream>
@@ -27,7 +26,7 @@
 #include "SharedObj.h"
 #include "json/json.h"
 
-static log_error_cb _error_cb;
+
 static inline uint64_t get_current_msec_stamp();
 
 const static char* CLUSE="clues";
@@ -280,8 +279,6 @@ BLOCK:
         return __sync_fetch_and_add(this->uid,1);
     }
 
-    char* formatLogging(const char *format,va_list args);
-
     inline uint64_t getStartTime() const
     {
         return this->start_time;
@@ -369,8 +366,6 @@ private:
 #include <unistd.h>
 #include <pthread.h>
 
-
-#define getOSPid getpid
 static pthread_key_t key;
 static pthread_once_t init_done = PTHREAD_ONCE_INIT;
 static pthread_rwlock_t rwlock = PTHREAD_RWLOCK_INITIALIZER;
@@ -438,33 +433,25 @@ void thread_init(void)
    pthread_key_create(&key, free_agent);
 }
 
-// register when thread/module/process start
-void register_error_cb(log_error_cb error_cb)
-{
-    _error_cb  = error_cb;
-}
 
 static PerThreadAgent* get_agent()
 {
     void* spec = pthread_getspecific(key);
     if( unlikely(spec == NULL) )
     {
-
+        PerThreadAgent * agent = NULL;
         lock_agent_pool();
         if(agentPool.empty())
         {
             unlock_agent_pool();
             try{
-                PerThreadAgent * agent = new PerThreadAgent(&global_agent_info);
-                pthread_setspecific(key,agent);
-                return agent;
+                agent = new PerThreadAgent(&global_agent_info);
             }catch(...){
-                pp_trace("create PerThreadAgent failed");
                 return NULL;
             }
         }else
         {
-            PerThreadAgent * agent =agentPool.top();
+            agent =agentPool.top();
             agentPool.pop();
             unlock_agent_pool();
             if(agent == NULL)
@@ -472,8 +459,9 @@ static PerThreadAgent* get_agent()
                 pp_trace("Found an error:%s:%d",__FILE__,__LINE__);
                 return NULL;
             }
-            return agent;
         }
+        pthread_setspecific(key,agent);
+        return agent;
     }else
     {
         return static_cast<PerThreadAgent*>(spec);
@@ -486,48 +474,13 @@ void free_agent(void *agent)
         lock_agent_pool();
         agentPool.push(static_cast<PerThreadAgent*>(agent));
         unlock_agent_pool();
-        pp_trace("agentPool size:%d",agentPool.size());
     }
-}
-
-
-char* PerThreadAgent::formatLogging(const char *format,va_list ap)
-{
-    char* pstart = this->log_buf;
-    int n = snprintf(this->log_buf,LOG_SIZE,"[pinpoint] [%d] ",getOSPid());
-    vsnprintf(pstart+n, LOG_SIZE -n - 1 ,format, ap);
-    va_end(ap);
-    return pstart;
 }
 
 #elif _WIN32
-#include <processthreadsapi.h>
-#define getOSPid GetCurrentProcessId
 #else
 #error "not support"
 #endif
-
-void pp_trace(const char *format,...)
-{
-    if(global_agent_info.debug_report != 1)
-    {
-        return ;
-    }
-
-    PerThreadAgent* p_agent = get_agent();
-    if(p_agent == NULL)
-    {
-        return ;
-    }
-    va_list args;
-    va_start(args, format);
-    char* pstart = p_agent->formatLogging(format,args);
-    if (_error_cb){
-        _error_cb(pstart);
-    }else{
-        fprintf(stderr,"%s\n",pstart);
-    }
-}
 
 int32_t pinpoint_start_trace()
 {
@@ -537,7 +490,6 @@ int32_t pinpoint_start_trace()
         return 0;
     }
     return p_agent->startTrace(p_agent);
-
 }
 
 

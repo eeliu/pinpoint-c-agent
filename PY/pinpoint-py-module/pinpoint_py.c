@@ -208,6 +208,7 @@ static void msg_log_error_cb(char* msg)
 
 static PyObject *py_pinpoint_enable_utest(PyObject *self, PyObject *args)
 {
+    // disable GIL 
     global_agent_info.debug_report = 1;
 
     PyObject *temp;
@@ -220,8 +221,6 @@ static PyObject *py_pinpoint_enable_utest(PyObject *self, PyObject *args)
             py_obj_msg_callback = temp;  
         }
     }
-
-// disable GIL 
 
 // register msg callback
     register_error_cb(msg_log_error_cb);
