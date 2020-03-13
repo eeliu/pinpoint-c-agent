@@ -330,7 +330,6 @@ END_OF_PARSE:
 }
 
 
-
 static void free_pinpoint_module(void * module)
 {
     Py_XDECREF(py_obj_msg_callback);
@@ -341,6 +340,18 @@ static void free_pinpoint_module(void * module)
 
 }
 
+static PyObject *py_pinpoint_mark_an_error(PyObject *self, PyObject *args)
+{
+    char * msg;
+    char * file_name;
+    uint line_no;
+    if(PyArg_ParseTuple(args,"ssl",&msg,&file_name,&line_no))
+    {
+        catch_error(msg,file_name,line_no);
+    }
+
+    return Py_BuildValue("O",Py_True);
+}
 
 /* Module method table */
 static PyMethodDef PinpointMethods[] = {
@@ -357,6 +368,7 @@ static PyMethodDef PinpointMethods[] = {
     {"get_special_key", py_pinpoint_get_key, METH_VARARGS, "def get_special_key(key)->string "},
     {"check_tracelimit", py_check_tracelimit, METH_VARARGS, "check_tracelimit(long timestamp): check trace whether is limit"},
     {"enable_debug", py_pinpoint_enable_utest, METH_VARARGS, "enable logging output(callback )"},
+    {"mark_as_error",py_pinpoint_mark_an_error,METH_VARARGS,"def mark_as_error(string msg,string file_name,uint line_no) #This trace found an error"},
     {"set_collector",(PyCFunction)py_set_collector, METH_VARARGS|METH_KEYWORDS, "def set_collector(collector_host=\"unix:/tmp/collector-agent.sock or tcp:host:port\",trace_limit=100)"},
     { NULL, NULL, 0, NULL}
 };

@@ -21,6 +21,7 @@
 
 from plugins.PinpointCommon import *
 from http.server import BaseHTTPRequestHandler
+import traceback
 import pinpoint
 
 class BaseHTTPRequestPlugins(Candy):
@@ -101,5 +102,6 @@ class BaseHTTPRequestPlugins(Candy):
 
     def onException(self, e):
         pinpoint.add_clue('EXP',e)
+        pinpoint.mark_as_error(traceback.format_exc(),"",0)
         raise e
         # do something
