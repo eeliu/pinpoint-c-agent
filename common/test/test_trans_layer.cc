@@ -12,6 +12,11 @@ using namespace testing;
 #define unix_socket  "./pinpoint_test.sock"
 bool run = true;
 
+void sig_exit(int signm)
+{
+    run = false;
+}
+
 int fack_server()
 {
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -22,14 +27,18 @@ int fack_server()
     if (bind(fd, (struct sockaddr *)&address, sizeof(address)) == -1) {
         EXPECT_TRUE(0)<<"bind server socket failed"<<strerror(errno);
     }
-
+    signal(SIGQUIT,sig_exit);
     listen(fd, 10);
-    while (true)
+    while (run)
     {
         char buffer[1024]={0};
         struct sockaddr addr;
         socklen_t addrlen;
         int cfd = accept(fd, &addr, &addrlen);
+        if (cfd == -1)
+        {
+            break;
+        }
         pp_trace("recv cfd:%d",cfd);
         Json::Value agentInfo;
 
@@ -50,7 +59,7 @@ int fack_server()
         sleep(2);
         close(cfd);
     }
-    
+    return 0;
 }
 
 void handle_agent_info(int type,const char* buf,size_t len)

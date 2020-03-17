@@ -1,13 +1,14 @@
 ﻿## Getting Started
 
 ### Requirement
+
 Dependency|Version
 ---|----
 PYTHON | 3.5+
 GCC| GCC 5+
 cmake| 3.0+
 *inux|
-pinpoint| 1.8.0-RC1
+pinpoint| 1.8.0-RC1(thrift) <br> 2.0+(GRPC)
 
 ### Installation
 #### install python virtual environment 
@@ -31,6 +32,7 @@ $ python setup.py install
     @BaseHTTPRequestPlugins('SimpleWebServer',__name__)
     def do_GET(self):
 ```
+
 2. Binding the function/method you care
 
 ```

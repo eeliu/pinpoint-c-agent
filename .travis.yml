@@ -13,8 +13,8 @@ jobs:
         - cmake -DCMAKE_BUILD_TYPE=Release .. 
         - make 
         - ./test/unittest
-
-    - php: "7.3"
+    - name: "php 7.3"
+      php: "7.3"
       env:
         - ROOT=$PWD
       script:
@@ -23,7 +23,8 @@ jobs:
         - sh agent_start.sh
         - phpize && ./configure && make
         - make test
-    - php: "7.2"
+    - name: "php 7.2"
+      php: "7.2"
       env:
         - ROOT=$PWD
       script:
@@ -33,7 +34,8 @@ jobs:
         - phpize && ./configure && make
         - make test
 
-    - php: "7.1"
+    - name: "php 7.1"
+      php: "7.1"
       env:
         - ROOT=$PWD
       script:
@@ -51,8 +53,7 @@ jobs:
         - cmake --version
         - cd $ROOT/PY/pinpoint-py-module/
         - pip install -r requirements.txt 
-        - sh run_before_setup.sh
-        - python3 setup.py install
+        - sh setup_all_in_one.sh
         - nosetests --exclude-test-file=test/TestUnderProcessMode.py ##
 
     - name: "python 3.6"
@@ -64,8 +65,7 @@ jobs:
         - cmake --version
         - cd $ROOT/PY/pinpoint-py-module/
         - pip install -r requirements.txt 
-        - sh run_before_setup.sh
-        - python3 setup.py install
+        - sh setup_all_in_one.sh
         - nosetests --exclude-test-file=test/TestUnderProcessMode.py ##
     - name: "python 3.5"
       python: 
@@ -76,8 +76,7 @@ jobs:
         - cmake --version
         - cd $ROOT/PY/pinpoint-py-module/
         - pip install -r requirements.txt 
-        - sh run_before_setup.sh
-        - python3 setup.py install
+        - sh setup_all_in_one.sh
         - nosetests --exclude-test-file=test/TestUnderProcessMode.py ##
 
     - name: "python 3.7"
@@ -89,8 +88,7 @@ jobs:
         - cmake --version
         - cd $ROOT/PY/pinpoint-py-module/
         - pip install -r requirements.txt 
-        - sh run_before_setup.sh
-        - python3 setup.py install
+        - sh setup_all_in_one.sh
         - nosetests --exclude-test-file=test/TestUnderProcessMode.py ##
 
 notifications:
