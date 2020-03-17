@@ -11,30 +11,37 @@ The current stable version is [Lastest](https://github.com/naver/pinpoint-c-agen
 
 It is an agent written by C++, PHP, python language. And we hope to support other languages by this agent. Until now, it supports **_PHP_** and **_PYTHON_**.
 
-## PHP 
+## HOW TO USE FOR PHP
 
 [Click me ☚](PHP/Readme.md)
 
-## PYTHON
+## HOW TO USE FOR PYTHON
 
 [Click me ☚](PY/Readme.md)
 
 
-## Overview PHP Agent
+## Overview Pinpoint Common Agent
 
 ### Pinpoint-c-agent 
 ![How does it work](images/pinpoint_0.2.jpg)
 
 ### Distributed Tracking system
 ![php_agent_example](images/php_agent_example.png)
+
 ### Call Stack
 
 ![php_agent_example_detail](images/php_agent_example_detail.png) | ![php_agent_example_memcached](images/callstack-memcached.png)
 --- | ---
 ![php_agent_example_pdo](images/callstack-pdo.png) | ![php_agent_example_redis](images/callstack-redis.png)
 
+## Contact Us
+* Submit an [issue](https://github.com/naver/pinpoint-c-agent/issues)
+* Chinese Community:
 
-## Overview PYTHON Agent
+QQ Group: 897594820 | DING Group
+:---:| :---:
+![QQ Group](images/NAVERPinpoint.png) | ![DING Group](images/NaverPinpoint交流群-DING.jpg)
+
 
 ## License
 This project is licensed under the Apache License, Version 2.0.
