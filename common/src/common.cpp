@@ -228,12 +228,13 @@ public:
 
         if(this->limit == E_OFFLINE)
         {
-            goto BLOCK;
+            pp_trace("collector-agent not available");
+            goto OFFLINE;
         }
 
         if(this->trace_limit < 0)
         {
-            return false;
+            // let it pass
         }else if(this->trace_limit == 0)
         {
             goto BLOCK;
@@ -252,11 +253,15 @@ public:
             __sync_add_and_fetch(this->triger,1);
             pp_trace("triger:%ld",*triger);
         }
-
+PASS:
+        this->limit = E_TRACE_PASS;
         return false;
 BLOCK:
         pp_trace("This span dropped. trace_limit:%d limit:%d",this->trace_limit,this->limit);
+OFFLINE:
+        this->limit = E_TRACE_BLOCK;
         return true;
+
     }
 
     void catchFetalError(const char* msg,const char* error_filename,uint error_lineno)
