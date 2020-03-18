@@ -128,9 +128,5 @@ class BaseFlaskPlugins(Candy):
         return ret
 
     def onException(self, e):
-        pinpoint.add_clue('EXP',e)
+        pinpoint.mark_as_error(traceback.format_exc(),"",0)
         raise e
-        # do something
-
-
-

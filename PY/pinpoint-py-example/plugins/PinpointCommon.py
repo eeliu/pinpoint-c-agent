@@ -20,6 +20,7 @@
 
 import pinpoint
 import random
+from PPAopInternal import *
 
 PYTHON = '1700'
 PYTHON_METHOD_CALL='1701'
@@ -106,18 +107,17 @@ class Candy(object):
         self.func_name=func.__name__
         def pinpointTrace(*args, **kwargs):
             ret = None
-            print("start", self.func_name)
+            # print("start", self.func_name)
             args, kwargs = self.onBefore(*args, **kwargs)
             print(kwargs)
             try:
                 ret = func(*args, **kwargs)
-                print(type(ret))
                 return ret
             except Exception as e:
                 self.onException(e)
                 raise e
             finally:
-                print("end", self.func_name)
+                # print("end", self.func_name)
                 self.onEnd(ret)
 
         return pinpointTrace
