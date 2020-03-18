@@ -33,14 +33,23 @@ APP_NAME ='python-app-name' # application name
 COLLECTOR_HOST='unix:/tmp/collector-agent.sock'
 
 ###############################################################
-PINPOINT_PSPANID = 'HTTP_PINPOINT_PSPANID'
-PINPOINT_SPANID = 'HTTP_PINPOINT_SPANID'
-PINPOINT_TRACEID = 'HTTP_PINPOINT_TRACEID'
-PINPOINT_PAPPNAME ='HTTP_PINPOINT_PAPPNAME'
-PINPOINT_PAPPTYPE ='HTTP_PINPOINT_PAPPTYPE'
-PINPOINT_HOST = 'HTTP_PINPOINT_HOST'
+HTTP_PINPOINT_PSPANID = 'HTTP_PINPOINT_PSPANID'
+HTTP_PINPOINT_SPANID = 'HTTP_PINPOINT_SPANID'
+HTTP_PINPOINT_TRACEID = 'HTTP_PINPOINT_TRACEID'
+HTTP_PINPOINT_PAPPNAME = 'HTTP_PINPOINT_PAPPNAME'
+HTTP_PINPOINT_PAPPTYPE = 'HTTP_PINPOINT_PAPPTYPE'
+HTTP_PINPOINT_HOST = 'HTTP_PINPOINT_HOST'
+
+PINPOINT_PSPANID = 'Pinpoint-Pspanid'
+PINPOINT_SPANID = 'Pinpoint-Spanid'
+PINPOINT_TRACEID = 'Pinpoint-Traceid'
+PINPOINT_PAPPNAME ='Pinpoint-Pappname'
+PINPOINT_PAPPTYPE ='Pinpoint-Papptype'
+PINPOINT_HOST = 'Pinpoint-Host'
+
 NGINX_PROXY = 'Pinpoint-ProxyNginx'
 APACHE_PROXY = 'HTTP_PINPOINT_PROXYAPACHE'
+
 SAMPLED = 'Pinpoint-Sampled'
 ServerType='stp'
 FuncName='name'
@@ -53,11 +62,11 @@ SQL_METADATA=22
 SQL_PARAM=  23
 SQL_BINDVALUE=24
 STRING_ID=30
-HTTP_URL=40
-HTTP_PARAM=41
-HTTP_PARAM_ENTITY=42
-HTTP_COOKIE=45
-HTTP_STATUS_CODE=46
+HTTP_URL='40'
+HTTP_PARAM='41'
+HTTP_PARAM_ENTITY='42'
+HTTP_COOKIE='45'
+HTTP_STATUS_CODE='46'
 HTTP_INTERNAL_DISPLAY=48
 HTTP_IO=49
 MESSAGE_QUEUE_URI=100
@@ -70,10 +79,10 @@ REDIS_REDISSON_INTERNAL='8204'
 MEMCACHED='8050'
 pinpoint.set_collector(collector_host=COLLECTOR_HOST)
 
-def output(msg):
-    print(msg)
-
-pinpoint.enable_debug(output)
+# def output(msg):
+#     print(msg)
+#
+pinpoint.enable_debug(None)
 
 class Candy(object):
     def __init__(self,class_name,module_name):
@@ -85,6 +94,7 @@ class Candy(object):
         pinpoint.start_trace()
         pinpoint.add_clue('appname',APP_NAME)
         pinpoint.add_clue('appid', APP_ID)
+        return (args,kwargs)
 
     def onEnd(self,ret):
         pinpoint.end_trace()
@@ -96,21 +106,27 @@ class Candy(object):
         self.func_name=func.__name__
         def pinpointTrace(*args, **kwargs):
             ret = None
-            self.onBefore(*args, **kwargs)
+            print("start", self.func_name)
+            args, kwargs = self.onBefore(*args, **kwargs)
+            print(kwargs)
             try:
                 ret = func(*args, **kwargs)
+                print(type(ret))
                 return ret
             except Exception as e:
                 self.onException(e)
                 raise e
             finally:
+                print("end", self.func_name)
                 self.onEnd(ret)
+
         return pinpointTrace
 
     def generateTid(self):
         return ('%s^%s^%s') % (APP_ID,str(pinpoint.start_time()), str(pinpoint.unique_id()))
 
-    def generateSid(self):
+    @staticmethod
+    def generateSid():
         return str(random.randint(0,2147483647))
 
     def getFuncUniqueName(self):

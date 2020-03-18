@@ -5,7 +5,7 @@ import threading
 class PinpointCommonPlugin(Candy):
 
     def onBefore(self,*args, **kwargs):
-        super().onBefore(*args, **kwargs)
+        args, kwargs = super().onBefore(*args, **kwargs)
         ###############################################################
         pinpoint.add_clue(FuncName,self.getFuncUniqueName())
         pinpoint.add_clue(ServerType,PYTHON_METHOD_CALL)
@@ -13,6 +13,7 @@ class PinpointCommonPlugin(Candy):
         pinpoint.add_clues(PY_ARGS, arg)
         ###############################################################
         # print( threading.currentThread().ident)
+        return args,kwargs
 
     def onEnd(self,ret):
         ###############################################################
@@ -30,8 +31,7 @@ class PinpointCommonPlugin(Candy):
 
         for i in args:
             args_tmp["arg["+str(j)+"]"] = (str(i))
-            j = j + 1
-            print(j)
+            j += 1
 
         for k in kwargs:
             args_tmp[k] = kwargs[k]

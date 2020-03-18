@@ -14,6 +14,6 @@ class TestUserFunc2(object):
         self.name = name
         self.score = score
 
-    @PinpointCommonPlugin("", __name__)
+    @PinpointCommonPlugin("TestUserFunc2", __name__)
     def test_func4(self):
         return "%s\'s score is : %s"%(self.name, self.score)
