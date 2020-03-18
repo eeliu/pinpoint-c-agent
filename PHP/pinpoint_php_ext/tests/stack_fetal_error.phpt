@@ -50,11 +50,13 @@ try{
 
 pinpoint_start_trace();
 --EXPECTF--
+[pinpoint] [%d] [%d]agent status changed: 0 ->1
 [pinpoint] [%d] [%d]pinpoint_start start
 [pinpoint] [%d] [%d]agent try to connect:(unix:/unexist_file.sock)
 [pinpoint] [%d] [%d]connect:(/unexist_file.sock) failed as (No such file or directory)
 [pinpoint] [%d] [%d]pinpoint_start start
 [pinpoint] [%d] [%d]key:name value:Foo
+[pinpoint] [%d] [%d]catch an Error
 [pinpoint] [%d] [%d]apm_error_cb called
 
 Fatal error: Uncaught Exception: I am testting in %s:27

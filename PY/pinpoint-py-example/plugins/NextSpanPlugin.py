@@ -25,15 +25,11 @@ class NextSpanPlugin(Candy):
 
     def __init__(self,class_name,module_name):
         super().__init__(class_name,module_name)
-        self.isLimit = False
 
     def handleHttpHeader(self, url, headers):
-        if self.isLimit:
-            headers[SAMPLED] = 's0'
-            return
 
         self.url = url
-        headers[SAMPLED] = 's1'
+        headers[SAMPLED] = pinpoint.get_special_key(SAMPLED)
         headers[PINPOINT_PAPPTYPE] = '1700'
         headers[PINPOINT_PAPPNAME] = APP_NAME
         headers['Pinpoint-Flags'] = "0"

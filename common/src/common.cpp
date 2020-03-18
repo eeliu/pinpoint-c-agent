@@ -251,9 +251,8 @@ public:
         }else
         {
             __sync_add_and_fetch(this->triger,1);
-            pp_trace("triger:%ld",*triger);
+
         }
-PASS:
         this->limit = E_TRACE_PASS;
         return false;
 BLOCK:
@@ -276,6 +275,7 @@ OFFLINE:
 
     inline void setLimit(E_ANGET_STATUS status )
     {
+        pp_trace("agent status changed: %d ->%d",this->limit ,status);
         this->limit = status;
     }
 
@@ -577,6 +577,7 @@ void catch_error(const char* msg,const char* error_filename,uint error_lineno)
     {
         return ;
     }
+    pp_trace("catch an Error");
     p_agent->catchFetalError(msg,error_filename,error_lineno);
 }
 

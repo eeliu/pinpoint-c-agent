@@ -108,8 +108,14 @@ class BaseHTTPRequestPlugins(Candy):
             if insBaseHttp.headers[SAMPLED] == 's0':
                 self.isLimit = True
                 pinpoint.drop_trace()
+                pinpoint.set_special_key(SAMPLED,'s0')
         else:
-            self.isLimit = pinpoint.check_tracelimit()
+            if pinpoint.check_tracelimit():
+                self.isLimit = True
+                pinpoint.set_special_key(SAMPLED, 's0')
+            else:
+                self.isLimit = False
+                pinpoint.set_special_key(SAMPLED, 's1')
 
         pinpoint.add_clue('tid',self.tid)
         pinpoint.add_clue('sid',self.sid)
