@@ -1,0 +1,75 @@
+from plugins.PinpointCommon import *
+from plugins.BaseFlaskPlugins import BaseFlaskPlugins
+import pinpoint
+from  urllib.parse import urlparse
+
+
+class NextSpanPlugin(Candy):
+
+    def __init__(self,class_name,module_name):
+        super().__init__(class_name,module_name)
+        self.isLimit = False
+
+    def handleHttpHeader(self, url, headers):
+        if self.isLimit:
+            headers[SAMPLED] = 's0'
+            return
+
+        self.url = url
+        headers[SAMPLED] = 's1'
+        headers[PINPOINT_PAPPTYPE] = '1700'
+        headers[PINPOINT_PAPPNAME] = APP_NAME
+        headers['Pinpoint-Flags'] = "0"
+        headers[PINPOINT_HOST] = self.getHostFromURL(self.url)
+        headers[PINPOINT_TRACEID] = pinpoint.get_special_key('tid')
+        headers[PINPOINT_PSPANID] = pinpoint.get_special_key('sid')
+        self.nsid = BaseFlaskPlugins.generateSid()
+        headers[PINPOINT_SPANID] = self.nsid
+
+    def onBefore(self,*args, **kwargs):
+        args, kwargs = super().onBefore(*args, **kwargs)
+        ###############################################################
+        pinpoint.add_clue(FuncName,self.getFuncUniqueName())
+        pinpoint.add_clue(ServerType,PYTHON_METHOD_CALL)
+        arg = self.get_arg(*args, **kwargs)
+        pinpoint.add_clues(PY_ARGS, arg)
+        if "headers" in kwargs:
+            self.handleHttpHeader(args[0], kwargs["headers"])
+        else:
+            kwargs["headers"] = {}
+            self.handleHttpHeader(args[0], kwargs["headers"])
+        ###############################################################
+        return args, kwargs
+
+    def onEnd(self,ret):
+        ###############################################################
+        pinpoint.add_clue("dst", self.getHostFromURL(self.url))
+        pinpoint.add_clue("stp", PYTHON_REMOTE_METHOD)
+        pinpoint.add_clue('nsid', self.nsid)
+        pinpoint.add_clues(HTTP_URL, self.url)
+        pinpoint.add_clues(HTTP_STATUS_CODE, str(ret.status_code))
+        pinpoint.add_clues(PY_RETURN,str(ret))
+
+        ###############################################################
+        super().onEnd(ret)
+        return ret
+
+    def onException(self, e):
+        pinpoint.add_clue('EXP',str(e))
+
+    def get_arg(self, *args, **kwargs):
+        args_tmp = {}
+        j = 0
+
+        for i in args:
+            args_tmp["arg["+str(j)+"]"] = (str(i))
+            j += 1
+
+        for k in kwargs:
+            args_tmp[k] = kwargs[k]
+
+        return str(args_tmp)
+
+    def getHostFromURL(self, url):
+        returl = urlparse(url)
+        return returl.netloc + returl.path

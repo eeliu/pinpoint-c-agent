@@ -29,7 +29,7 @@ class BaseHTTPRequestPlugins(Candy):
         self.isLimit = False
 
     def onBefore(self,*args, **kwargs):
-        super().onBefore(*args, **kwargs)
+        args, kwargs = super().onBefore(*args, **kwargs)
         ###############################################################
         print("------------------- call before -----------------------")
         insBaseHttp = args[0]
@@ -40,38 +40,63 @@ class BaseHTTPRequestPlugins(Candy):
         pinpoint.add_clue('server',insBaseHttp.headers.get('Host'))
         pinpoint.add_clue('stp',PYTHON)
 
-        if PINPOINT_PSPANID in insBaseHttp.headers:
-            pinpoint.add_clue('psid',insBaseHttp.headers[PINPOINT_PSPANID])
-            print("PINPOINT_PSPANID:",insBaseHttp.headers[PINPOINT_PSPANID])
-        
-        if PINPOINT_SPANID in insBaseHttp.headers:
+        # nginx add http
+        if HTTP_PINPOINT_PSPANID in insBaseHttp.headers:
+            pinpoint.add_clue('psid', insBaseHttp.headers[HTTP_PINPOINT_PSPANID])
+            print("PINPOINT_PSPANID:", insBaseHttp.headers[HTTP_PINPOINT_PSPANID])
+
+        if HTTP_PINPOINT_SPANID in insBaseHttp.headers:
+            self.sid = insBaseHttp.headers[HTTP_PINPOINT_SPANID]
+        elif PINPOINT_SPANID in insBaseHttp.headers:
             self.sid = insBaseHttp.headers[PINPOINT_SPANID]
         else:
             self.sid = self.generateSid()
         pinpoint.set_special_key('sid',self.sid)
-        
 
-        if PINPOINT_TRACEID in insBaseHttp.headers:
+
+        if HTTP_PINPOINT_TRACEID in insBaseHttp.headers:
+            self.tid = insBaseHttp.headers[HTTP_PINPOINT_TRACEID]
+        elif PINPOINT_TRACEID in insBaseHttp.headers:
             self.tid = insBaseHttp.headers[PINPOINT_TRACEID]
         else:
             self.tid = self.generateTid()
         pinpoint.set_special_key('tid',self.tid)
 
-        if PINPOINT_PAPPNAME in insBaseHttp.headers:
-            self.pname = insBaseHttp.headers[PINPOINT_PAPPNAME]
+        if HTTP_PINPOINT_PAPPNAME in insBaseHttp.headers:
+            self.pname = insBaseHttp.headers[HTTP_PINPOINT_PAPPNAME]
             pinpoint.set_special_key('pname',self.pname)
             pinpoint.add_clue('pname',self.pname)
 
-        if PINPOINT_PAPPTYPE in insBaseHttp.headers:
-            self.ptype = insBaseHttp.headers[PINPOINT_PAPPTYPE]
+        if HTTP_PINPOINT_PAPPTYPE in insBaseHttp.headers:
+            self.ptype = insBaseHttp.headers[HTTP_PINPOINT_PAPPTYPE]
             pinpoint.set_special_key('ptype',self.ptype)
             pinpoint.add_clue('ptype',self.ptype)
 
-        if PINPOINT_HOST in insBaseHttp.headers:
-            self.Ah = insBaseHttp.headers[PINPOINT_PAPPTYPE]
+        if HTTP_PINPOINT_HOST in insBaseHttp.headers:
+            self.Ah = insBaseHttp.headers[HTTP_PINPOINT_HOST]
             pinpoint.set_special_key('Ah',self.Ah)
             pinpoint.add_clue('Ah',self.Ah)
-        
+
+        # Not nginx, no http
+        if PINPOINT_PSPANID in insBaseHttp.headers:
+            pinpoint.add_clue('psid', insBaseHttp.headers[PINPOINT_PSPANID])
+            print("PINPOINT_PSPANID:", insBaseHttp.headers[PINPOINT_PSPANID])
+
+        if PINPOINT_PAPPNAME in insBaseHttp.headers:
+            self.pname = insBaseHttp.headers[PINPOINT_PAPPNAME]
+            pinpoint.set_special_key('pname', self.pname)
+            pinpoint.add_clue('pname', self.pname)
+
+        if PINPOINT_PAPPTYPE in insBaseHttp.headers:
+            self.ptype = insBaseHttp.headers[PINPOINT_PAPPTYPE]
+            pinpoint.set_special_key('ptype', self.ptype)
+            pinpoint.add_clue('ptype', self.ptype)
+
+        if PINPOINT_HOST in insBaseHttp.headers:
+            self.Ah = insBaseHttp.headers[PINPOINT_HOST]
+            pinpoint.set_special_key('Ah', self.Ah)
+            pinpoint.add_clue('Ah', self.Ah)
+
         if NGINX_PROXY in insBaseHttp.headers:
             pinpoint.add_clue('NP',insBaseHttp.headers[NGINX_PROXY])
         
@@ -88,6 +113,7 @@ class BaseHTTPRequestPlugins(Candy):
         pinpoint.add_clue('tid',self.tid)
         pinpoint.add_clue('sid',self.sid)
         ###############################################################
+        return args, kwargs
 
     def onEnd(self,ret):
         ###############################################################
@@ -102,3 +128,5 @@ class BaseHTTPRequestPlugins(Candy):
     def onException(self, e):
         pinpoint.add_clue('EXP',str(e))
         # do something
+
+

@@ -8,7 +8,7 @@ from datetime import datetime
 import functools
 import requests
 
-from plugins.BaseFlaskPlugins import BaseFlaskPlugins
+from plugins.PinpointCommonPlugin import PinpointCommonPlugin
 
 
 import test_function
@@ -33,6 +33,7 @@ from test_exception import UserDefineException
 import test_args
 import test_returns
 from DBControl import DBContrl
+from MyRequests import *
 
 
 
@@ -129,13 +130,13 @@ def test_generator_form():
 
 @app.route('/test_higher_order', methods=['GET'])
 def test_higher_order_form():
-
+    @PinpointCommonPlugin("", __name__)
     def f(x):
         return x * x
 
     l1 = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    r = map(f, l1)
-    # r = map(test_higher_order.f, l1)
+    # r = map(f, l1)
+    r = map(test_higher_order.f, l1)
     h = "["
     for i in r:
         h = h + str(i) + ","
@@ -227,7 +228,7 @@ def test_abstract_form():
 def test_staticmethod_form():
     h1 = Method.static_method("Hello", "Static")
     i1 = Method()
-    h2 =  i1.static_method("Hello", "InstanceStatic")
+    h2 = i1.static_method("Hello", "InstanceStatic")
     return '''<h3>%s</h3>
               <h3>%s</h3>''' % (h1, h2)
 
@@ -236,7 +237,7 @@ def test_staticmethod_form():
 def test_classmethod_form():
     h1 = Method.class_method("Hello", "Class")
     i1 = Method()
-    h2 =  i1.class_method("Hello", "InstanceClass")
+    h2 = i1.class_method("Hello", "InstanceClass")
     return '''<h3>%s</h3>
               <h3>%s</h3>''' % (h1, h2)
 
@@ -293,6 +294,7 @@ def test_returns_form():
     i1 = Method()
     f = open("app.py", 'r')
     l1 = [None, 123, 3.1415, True, "abc", (123, "abc"), [456, "def"], {"a":1, "b":2}, set("abc"), i1, str(UserDefineException("Evy")), f, GREETING, lambda x:x*x]
+    # l1 = [[456, "def"]]
     l2 = []
     for i in l1:
         l2.append(str(type(test_returns.test_returns1(i)))[8:-2])

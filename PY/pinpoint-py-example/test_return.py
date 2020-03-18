@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
+from plugins.PinpointCommonPlugin import PinpointCommonPlugin
+
 
 def lazy_sum(*args):
+    @PinpointCommonPlugin('', __name__)
     def sum():
         ax = 0
         for n in args:
