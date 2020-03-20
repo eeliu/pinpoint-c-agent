@@ -19,7 +19,7 @@ https://packaging.python.org/guides/installing-using-pip-and-virtual-environment
 
 ```
 $ cd PY/pinpoint-py-module
-$ sh run_before_setup.sh
+$ sh setup_all_in_one.sh
 $ python setup.py install
 ```
 #### integration pinpoint into your project
