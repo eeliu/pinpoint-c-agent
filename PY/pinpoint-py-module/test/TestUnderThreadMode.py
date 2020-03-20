@@ -12,7 +12,7 @@ class TestUnderThreadMode(TestCase):
 
     def _test_api_flow(self):
         self.assertTrue(pinpoint.set_collector(collector_host='unix:/tmp/unexist.sock'))
-        self.assertTrue(pinpoint.enable_debug(None))
+        # self.assertTrue(pinpoint.enable_debug(None))
 
         while self.thread_running:
             self.assertEqual(pinpoint.start_trace(),1)

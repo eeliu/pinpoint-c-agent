@@ -8,7 +8,7 @@ import pinpoint
 class TestUnderProcessMode(TestCase):
     def _test_api_flow(self):
         self.assertTrue(pinpoint.set_collector(collector_host='unix:/tmp/unexist.sock'))
-        self.assertTrue(pinpoint.enable_debug(None))
+        # self.assertTrue(pinpoint.enable_debug(None))
 
         while True:
             pinpoint.set_special_key('sid','12345678')
