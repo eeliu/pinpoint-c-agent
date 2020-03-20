@@ -16,7 +16,6 @@
 
 
 from plugins.PinpointCommon import *
-from plugins.BaseFlaskPlugins import BaseFlaskPlugins
 import pinpoint
 from  urllib.parse import urlparse
 
@@ -36,7 +35,7 @@ class NextSpanPlugin(Candy):
         headers[PINPOINT_HOST] = self.getHostFromURL(self.url)
         headers[PINPOINT_TRACEID] = pinpoint.get_special_key('tid')
         headers[PINPOINT_PSPANID] = pinpoint.get_special_key('sid')
-        self.nsid = BaseFlaskPlugins.generateSid()
+        self.nsid = self.generateSid()
         headers[PINPOINT_SPANID] = self.nsid
 
     def onBefore(self,*args, **kwargs):

@@ -51,7 +51,6 @@ from test_exception import UserDefineException
 import test_args
 import test_returns
 from DBControl import DBContrl
-from PinPointPY import *
 
 
 
