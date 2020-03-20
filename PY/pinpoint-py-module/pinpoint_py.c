@@ -219,11 +219,10 @@ static PyObject *py_pinpoint_enable_utest(PyObject *self, PyObject *args)
             Py_XINCREF(temp);
             Py_XDECREF(py_obj_msg_callback);
             py_obj_msg_callback = temp;  
+            register_error_cb(msg_log_error_cb);
         }
     }
-
-// register msg callback
-    register_error_cb(msg_log_error_cb);
+// disable logging callback
     enable_trace_utest();
 
     return Py_BuildValue("O",Py_True);
@@ -397,6 +396,6 @@ PyInit_pinpoint(void) {
     global_agent_info.debug_report = 0;
     global_agent_info.timeout_ms = 0;
     global_agent_info.trace_limit = -1;
-
+    register_error_cb(NULL);
   return PyModule_Create(&pinpointmodule);
 }
