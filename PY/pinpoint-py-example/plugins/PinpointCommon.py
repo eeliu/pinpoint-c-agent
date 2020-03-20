@@ -108,7 +108,7 @@ class Candy(object):
             ret = None
             # print("start", self.func_name)
             args, kwargs = self.onBefore(*args, **kwargs)
-            print(kwargs)
+            # print(kwargs)
             try:
                 ret = func(*args, **kwargs)
                 return ret
@@ -124,8 +124,7 @@ class Candy(object):
     def generateTid(self):
         return ('%s^%s^%s') % (APP_ID,str(pinpoint.start_time()), str(pinpoint.unique_id()))
 
-    @staticmethod
-    def generateSid():
+    def generateSid(self):
         return str(random.randint(0,2147483647))
 
     def getFuncUniqueName(self):
