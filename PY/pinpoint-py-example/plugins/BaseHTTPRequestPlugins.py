@@ -20,6 +20,8 @@
 
 
 from plugins.PinpointCommon import *
+from plugins.PPAopInternal import *
+
 from http.server import BaseHTTPRequestHandler
 import traceback
 import pinpoint

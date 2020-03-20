@@ -20,7 +20,6 @@
 
 import pinpoint
 import random
-from PPAopInternal import *
 
 PYTHON = '1700'
 PYTHON_METHOD_CALL='1701'
