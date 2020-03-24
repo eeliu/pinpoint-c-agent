@@ -13,19 +13,24 @@ jobs:
         - cmake -DCMAKE_BUILD_TYPE=Release .. 
         - make 
         - ./test/unittest
+        
     - name: "php 7.3"
       php: "7.3"
       env:
         - ROOT=$PWD
       script:
-        - phpize && ./configure && make
+        - phpize
+        - ./configure
+        - make
         - make test TESTS=src/PHP/tests/
     - name: "php 7.2"
       php: "7.2"
       env:
         - ROOT=$PWD
       script:
-        - phpize && ./configure && make
+        - phpize
+        - ./configure
+        - make
         - make test TESTS=src/PHP/tests/
 
     - name: "php 7.1"
@@ -33,11 +38,13 @@ jobs:
       env:
         - ROOT=$PWD
       script:
-        - phpize && ./configure && make
+        - phpize
+        - ./configure
+        - make
         - make test TESTS=src/PHP/tests/
+
     - name: "python 3.8"
-      python: 
-        - "3.8"
+      python: "3.8"
       env:
         - ROOT=$PWD
       script:
@@ -47,8 +54,7 @@ jobs:
         - nosetests src/PY/test
 
     - name: "python 3.6"
-      python: 
-      - 3.6
+      python: "3.6"
       env:
         - ROOT=$PWD
       script:
@@ -57,8 +63,7 @@ jobs:
         - python setup.py install
         - nosetests src/PY/test
     - name: "python 3.5"
-      python: 
-      - 3.5
+      python: "3.5"
       env:
         - ROOT=$PWD
       script:
@@ -68,8 +73,7 @@ jobs:
         - nosetests src/PY/test
 
     - name: "python 3.7"
-      python: 
-        - "3.7"
+      python: "3.7"
       env:
         - ROOT=$PWD
       script:

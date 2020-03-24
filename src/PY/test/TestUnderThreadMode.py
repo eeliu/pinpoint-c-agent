@@ -2,7 +2,7 @@
 import unittest
 from threading import Thread
 import time
-import pinpoint
+import pinpointPy
 
 
 class TestUnderThreadMode(TestCase):
@@ -11,18 +11,18 @@ class TestUnderThreadMode(TestCase):
         self.thread_running = True
 
     def _test_api_flow(self):
-        self.assertTrue(pinpoint.set_collector(collector_host='unix:/tmp/unexist.sock'))
-        # self.assertTrue(pinpoint.enable_debug(None))
+        self.assertTrue(pinpointPy.set_collector(collector_host='unix:/tmp/unexist.sock'))
+        # self.assertTrue(pinpointPy.enable_debug(None))
 
         while self.thread_running:
-            self.assertEqual(pinpoint.start_trace(),1)
-            pinpoint.set_special_key('sid','12345678')
-            pinpoint.add_clue("key","value3")
-            pinpoint.add_clues("key","value3")
-            value = pinpoint.get_special_key('sid')
+            self.assertEqual(pinpointPy.start_trace(),1)
+            pinpointPy.set_special_key('sid','12345678')
+            pinpointPy.add_clue("key","value3")
+            pinpointPy.add_clues("key","value3")
+            value = pinpointPy.get_special_key('sid')
             self.assertEqual(value,'12345678')
-            self.assertEqual(pinpoint.end_trace(),0)
-            value = pinpoint.get_special_key('sid')
+            self.assertEqual(pinpointPy.end_trace(),0)
+            value = pinpointPy.get_special_key('sid')
             self.assertFalse(value)
 
 

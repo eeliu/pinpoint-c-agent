@@ -388,7 +388,7 @@ static struct PyModuleDef pinpointPymodule = {
 
 /* Module initialization function */
 PyMODINIT_FUNC
-PyInit_pinpoint(void) {
+PyInit_pinpointPy(void) {
     
     global_agent_info.agent_type=1700;
     global_agent_info.co_host = "unix:/tmp/collector.sock";
