@@ -371,11 +371,10 @@ static PyMethodDef PinpointMethods[] = {
     {"set_collector",(PyCFunction)py_set_collector, METH_VARARGS|METH_KEYWORDS, "def set_collector(collector_host=\"unix:/tmp/collector-agent.sock or tcp:host:port\",trace_limit=100)"},
     { NULL, NULL, 0, NULL}
 };
-
 /* Module structure */
-static struct PyModuleDef pinpointmodule = {
+static struct PyModuleDef pinpointPymodule = {
     PyModuleDef_HEAD_INIT,
-    "pinpoint",           /* name of module */
+    "pinpointPy",           /* name of module */
     "python agent for pinpoint platform",  /* Doc string (may be NULL) */
     -1,                 /* Size of per-interpreter state or -1 */
     PinpointMethods,       /* Method table */
@@ -397,5 +396,5 @@ PyInit_pinpoint(void) {
     global_agent_info.timeout_ms = 0;
     global_agent_info.trace_limit = -1;
     register_error_cb(NULL);
-  return PyModule_Create(&pinpointmodule);
+  return PyModule_Create(&pinpointPymodule);
 }

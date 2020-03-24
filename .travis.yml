@@ -18,32 +18,23 @@ jobs:
       env:
         - ROOT=$PWD
       script:
-        - cmake --version
-        - cd $ROOT/PHP/pinpoint_php_ext/
-        - sh agent_start.sh
         - phpize && ./configure && make
-        - make test
+        - make test TESTS=src/PHP/tests/
     - name: "php 7.2"
       php: "7.2"
       env:
         - ROOT=$PWD
       script:
-        - cmake --version
-        - cd $ROOT/PHP/pinpoint_php_ext/
-        - sh agent_start.sh
         - phpize && ./configure && make
-        - make test
+        - make test TESTS=src/PHP/tests/
 
     - name: "php 7.1"
       php: "7.1"
       env:
         - ROOT=$PWD
       script:
-        - cmake --version
-        - cd $ROOT/PHP/pinpoint_php_ext/
-        - sh agent_start.sh
         - phpize && ./configure && make
-        - make test
+        - make test TESTS=src/PHP/tests/
     - name: "python 3.8"
       python: 
         - "3.8"
@@ -51,10 +42,9 @@ jobs:
         - ROOT=$PWD
       script:
         - cmake --version
-        - cd $ROOT/PY/pinpoint-py-module/
         - pip install -r requirements.txt 
-        - sh setup_all_in_one.sh
-        - nosetests --exclude-test-file=test/TestUnderProcessMode.py ##
+        - python setup.py install
+        - nosetests src/PY/test
 
     - name: "python 3.6"
       python: 
@@ -63,10 +53,9 @@ jobs:
         - ROOT=$PWD
       script:
         - cmake --version
-        - cd $ROOT/PY/pinpoint-py-module/
         - pip install -r requirements.txt 
-        - sh setup_all_in_one.sh
-        - nosetests --exclude-test-file=test/TestUnderProcessMode.py ##
+        - python setup.py install
+        - nosetests src/PY/test
     - name: "python 3.5"
       python: 
       - 3.5
@@ -74,10 +63,9 @@ jobs:
         - ROOT=$PWD
       script:
         - cmake --version
-        - cd $ROOT/PY/pinpoint-py-module/
         - pip install -r requirements.txt 
-        - sh setup_all_in_one.sh
-        - nosetests --exclude-test-file=test/TestUnderProcessMode.py ##
+        - python setup.py install
+        - nosetests src/PY/test
 
     - name: "python 3.7"
       python: 
@@ -86,10 +74,9 @@ jobs:
         - ROOT=$PWD
       script:
         - cmake --version
-        - cd $ROOT/PY/pinpoint-py-module/
         - pip install -r requirements.txt 
-        - sh setup_all_in_one.sh
-        - nosetests --exclude-test-file=test/TestUnderProcessMode.py ##
+        - python setup.py install
+        - nosetests src/PY/test
 
 notifications:
   email:

@@ -19,7 +19,7 @@
 # ------------------------------------------------------------------------------
 
 
-import pinpoint
+import pinpointPy
 from plugins.PinpointCommon import *
 from plugins.PPAopInternal import *
 
@@ -38,15 +38,15 @@ class BaseFlaskPlugins(Candy):
         # print(threading.currentThread().ident)
         print("------------------- call before -----------------------")
         request = Request(args[1])
-        pinpoint.add_clue('name', 'BaseFlaskrequest')
-        pinpoint.add_clue('uri', request.path)
-        pinpoint.add_clue('client',request.remote_addr)
-        pinpoint.add_clue('server', request.host)
-        pinpoint.add_clue('stp', PYTHON)
+        pinpointPy.add_clue('name', 'BaseFlaskrequest')
+        pinpointPy.add_clue('uri', request.path)
+        pinpointPy.add_clue('client',request.remote_addr)
+        pinpointPy.add_clue('server', request.host)
+        pinpointPy.add_clue('stp', PYTHON)
 
         # nginx add http
         if HTTP_PINPOINT_PSPANID in request.headers:
-            pinpoint.add_clue('psid', request.headers[HTTP_PINPOINT_PSPANID])
+            pinpointPy.add_clue('psid', request.headers[HTTP_PINPOINT_PSPANID])
             print("PINPOINT_PSPANID:", request.headers[HTTP_PINPOINT_PSPANID])
 
         if HTTP_PINPOINT_SPANID in request.headers:
@@ -55,7 +55,7 @@ class BaseFlaskPlugins(Candy):
             self.sid = request.headers[PINPOINT_SPANID]
         else:
             self.sid = self.generateSid()
-        pinpoint.set_special_key('sid',self.sid)
+        pinpointPy.set_special_key('sid',self.sid)
 
 
         if HTTP_PINPOINT_TRACEID in request.headers:
@@ -64,65 +64,65 @@ class BaseFlaskPlugins(Candy):
             self.tid = request.headers[PINPOINT_TRACEID]
         else:
             self.tid = self.generateTid()
-        pinpoint.set_special_key('tid',self.tid)
+        pinpointPy.set_special_key('tid',self.tid)
 
         if HTTP_PINPOINT_PAPPNAME in request.headers:
             self.pname = request.headers[HTTP_PINPOINT_PAPPNAME]
-            pinpoint.set_special_key('pname',self.pname)
-            pinpoint.add_clue('pname',self.pname)
+            pinpointPy.set_special_key('pname',self.pname)
+            pinpointPy.add_clue('pname',self.pname)
 
         if HTTP_PINPOINT_PAPPTYPE in request.headers:
             self.ptype = request.headers[HTTP_PINPOINT_PAPPTYPE]
-            pinpoint.set_special_key('ptype',self.ptype)
-            pinpoint.add_clue('ptype',self.ptype)
+            pinpointPy.set_special_key('ptype',self.ptype)
+            pinpointPy.add_clue('ptype',self.ptype)
 
         if HTTP_PINPOINT_HOST in request.headers:
             self.Ah = request.headers[HTTP_PINPOINT_HOST]
-            pinpoint.set_special_key('Ah',self.Ah)
-            pinpoint.add_clue('Ah',self.Ah)
+            pinpointPy.set_special_key('Ah',self.Ah)
+            pinpointPy.add_clue('Ah',self.Ah)
 
         # Not nginx, no http
         if PINPOINT_PSPANID in request.headers:
-            pinpoint.add_clue('psid', request.headers[PINPOINT_PSPANID])
+            pinpointPy.add_clue('psid', request.headers[PINPOINT_PSPANID])
             print("PINPOINT_PSPANID:", request.headers[PINPOINT_PSPANID])
 
         if PINPOINT_PAPPNAME in request.headers:
             self.pname = request.headers[PINPOINT_PAPPNAME]
-            pinpoint.set_special_key('pname', self.pname)
-            pinpoint.add_clue('pname', self.pname)
+            pinpointPy.set_special_key('pname', self.pname)
+            pinpointPy.add_clue('pname', self.pname)
 
         if PINPOINT_PAPPTYPE in request.headers:
             self.ptype = request.headers[PINPOINT_PAPPTYPE]
-            pinpoint.set_special_key('ptype', self.ptype)
-            pinpoint.add_clue('ptype', self.ptype)
+            pinpointPy.set_special_key('ptype', self.ptype)
+            pinpointPy.add_clue('ptype', self.ptype)
 
         if PINPOINT_HOST in request.headers:
             self.Ah = request.headers[PINPOINT_HOST]
-            pinpoint.set_special_key('Ah', self.Ah)
-            pinpoint.add_clue('Ah', self.Ah)
+            pinpointPy.set_special_key('Ah', self.Ah)
+            pinpointPy.add_clue('Ah', self.Ah)
         
         if NGINX_PROXY in request.headers:
-            pinpoint.add_clue('NP',request.headers[NGINX_PROXY])
+            pinpointPy.add_clue('NP',request.headers[NGINX_PROXY])
         
         if APACHE_PROXY in request.headers:
-            pinpoint.add_clue('AP',request.headers[APACHE_PROXY])
+            pinpointPy.add_clue('AP',request.headers[APACHE_PROXY])
 
         if SAMPLED in request.headers:
             if request.headers[SAMPLED] == 's0':
                 self.isLimit = True
-                pinpoint.drop_trace()
+                pinpointPy.drop_trace()
         else:
-            # self.isLimit = pinpoint.check_tracelimit()
+            # self.isLimit = pinpointPy.check_tracelimit()
             print(self.isLimit)
-        pinpoint.add_clue('tid',self.tid)
-        pinpoint.add_clue('sid',self.sid)
+        pinpointPy.add_clue('tid',self.tid)
+        pinpointPy.add_clue('sid',self.sid)
         ###############################################################
         return args, kwargs
 
     def onEnd(self,ret):
         ###############################################################
         if self.isLimit:
-            pinpoint.drop_trace()
+            pinpointPy.drop_trace()
         print("------------------- call end -----------------------")
         ###############################################################
         super().onEnd(ret)
@@ -130,5 +130,5 @@ class BaseFlaskPlugins(Candy):
         return ret
 
     def onException(self, e):
-        pinpoint.mark_as_error(traceback.format_exc(),"",0)
+        pinpointPy.mark_as_error(traceback.format_exc(),"",0)
         raise e

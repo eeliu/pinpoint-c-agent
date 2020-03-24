@@ -16,7 +16,7 @@
 
 
 from plugins.PinpointCommon import *
-import pinpoint
+import pinpointPy
 from  urllib.parse import urlparse
 
 
@@ -28,23 +28,23 @@ class NextSpanPlugin(Candy):
     def handleHttpHeader(self, url, headers):
 
         self.url = url
-        headers[SAMPLED] = pinpoint.get_special_key(SAMPLED)
+        headers[SAMPLED] = pinpointPy.get_special_key(SAMPLED)
         headers[PINPOINT_PAPPTYPE] = '1700'
         headers[PINPOINT_PAPPNAME] = APP_NAME
         headers['Pinpoint-Flags'] = "0"
         headers[PINPOINT_HOST] = self.getHostFromURL(self.url)
-        headers[PINPOINT_TRACEID] = pinpoint.get_special_key('tid')
-        headers[PINPOINT_PSPANID] = pinpoint.get_special_key('sid')
+        headers[PINPOINT_TRACEID] = pinpointPy.get_special_key('tid')
+        headers[PINPOINT_PSPANID] = pinpointPy.get_special_key('sid')
         self.nsid = self.generateSid()
         headers[PINPOINT_SPANID] = self.nsid
 
     def onBefore(self,*args, **kwargs):
         args, kwargs = super().onBefore(*args, **kwargs)
         ###############################################################
-        pinpoint.add_clue(FuncName,self.getFuncUniqueName())
-        pinpoint.add_clue(ServerType,PYTHON_METHOD_CALL)
+        pinpointPy.add_clue(FuncName,self.getFuncUniqueName())
+        pinpointPy.add_clue(ServerType,PYTHON_METHOD_CALL)
         arg = self.get_arg(*args, **kwargs)
-        pinpoint.add_clues(PY_ARGS, arg)
+        pinpointPy.add_clues(PY_ARGS, arg)
         if "headers" in kwargs:
             self.handleHttpHeader(args[0], kwargs["headers"])
         else:
@@ -55,19 +55,19 @@ class NextSpanPlugin(Candy):
 
     def onEnd(self,ret):
         ###############################################################
-        pinpoint.add_clue("dst", self.getHostFromURL(self.url))
-        pinpoint.add_clue("stp", PYTHON_REMOTE_METHOD)
-        pinpoint.add_clue('nsid', self.nsid)
-        pinpoint.add_clues(HTTP_URL, self.url)
-        pinpoint.add_clues(HTTP_STATUS_CODE, str(ret.status_code))
-        pinpoint.add_clues(PY_RETURN,str(ret))
+        pinpointPy.add_clue("dst", self.getHostFromURL(self.url))
+        pinpointPy.add_clue("stp", PYTHON_REMOTE_METHOD)
+        pinpointPy.add_clue('nsid', self.nsid)
+        pinpointPy.add_clues(HTTP_URL, self.url)
+        pinpointPy.add_clues(HTTP_STATUS_CODE, str(ret.status_code))
+        pinpointPy.add_clues(PY_RETURN,str(ret))
 
         ###############################################################
         super().onEnd(ret)
         return ret
 
     def onException(self, e):
-        pinpoint.add_clue('EXP',str(e))
+        pinpointPy.add_clue('EXP',str(e))
 
     def get_arg(self, *args, **kwargs):
         args_tmp = {}
