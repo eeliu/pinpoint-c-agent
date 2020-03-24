@@ -54,7 +54,7 @@ class AppManagement(object):
             ## check service_type
 
         else:
-            TCLogger.info("collector-agent try to create a new application agent.[%s@%s]",app_id,app_name)
+            TCLogger.info("collector-agent try to create a new application agent.[%s@%s@%d]",app_id,app_name,service_type)
             app = self.collector_conf.collector_implement(self.collector_conf, app_id, app_name,service_type)
             app.start()
             self.app_map[app_id] = app

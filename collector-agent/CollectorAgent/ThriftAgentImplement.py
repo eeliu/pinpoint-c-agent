@@ -74,7 +74,7 @@ class ThriftAgentImplement(PinpointAgent):
             applicationName=app_name,
             agentVersion=ac.version,
             startTimestamp=self.startTimeStamp,
-            serviceType=self.service_type,
+            serviceType=self.serviceType,
             pid=os.getpid()
         )
 
