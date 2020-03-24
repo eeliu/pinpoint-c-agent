@@ -24,3 +24,5 @@ cmake-build-debug
 core.*
 .gdb_history
 __pycache__/
+modules
+env

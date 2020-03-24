@@ -8,10 +8,12 @@ include_directories("json/include"
                     "include"
                     "src")
 
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}  -Werror -g3 -O0 -fPIC")   
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Werror -O2 -Wall -fPIC ")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Werror -g3 -O0 -fPIC")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Werror -O2 -Wall -fPIC")
+set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -Werror -Wall -fPIC")
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -Werror -Wall -fPIC")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}   -g3 -O0 -fPIC")   
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}  -O2")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}  -g3 -O0")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}  -O2")
 
 include (CTest)
 enable_testing()

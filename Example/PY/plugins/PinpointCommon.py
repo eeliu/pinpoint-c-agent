@@ -18,7 +18,7 @@
 #  limitations under the License.
 # ------------------------------------------------------------------------------
 
-import pinpoint
+import pinpointPy
 import random
 
 PYTHON = '1700'
@@ -77,12 +77,12 @@ REDIS='8200'
 REDIS_REDISSON='8203'
 REDIS_REDISSON_INTERNAL='8204'
 MEMCACHED='8050'
-pinpoint.set_collector(collector_host=COLLECTOR_HOST)
+pinpointPy.set_collector(collector_host=COLLECTOR_HOST)
 
 # def output(msg):
 #     print(msg)
 #
-pinpoint.enable_debug(None)
+pinpointPy.enable_debug(None)
 
 class Candy(object):
     def __init__(self,class_name,module_name):
@@ -91,13 +91,13 @@ class Candy(object):
 
 
     def onBefore(self,*args, **kwargs):
-        pinpoint.start_trace()
-        pinpoint.add_clue('appname',APP_NAME)
-        pinpoint.add_clue('appid', APP_ID)
+        pinpointPy.start_trace()
+        pinpointPy.add_clue('appname',APP_NAME)
+        pinpointPy.add_clue('appid', APP_ID)
         return (args,kwargs)
 
     def onEnd(self,ret):
-        pinpoint.end_trace()
+        pinpointPy.end_trace()
 
     def onException(self,e):
         raise NotImplementedError()
@@ -122,7 +122,7 @@ class Candy(object):
         return pinpointTrace
 
     def generateTid(self):
-        return ('%s^%s^%s') % (APP_ID,str(pinpoint.start_time()), str(pinpoint.unique_id()))
+        return ('%s^%s^%s') % (APP_ID,str(pinpointPy.start_time()), str(pinpointPy.unique_id()))
 
     def generateSid(self):
         return str(random.randint(0,2147483647))
