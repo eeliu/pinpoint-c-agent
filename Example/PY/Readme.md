@@ -43,3 +43,6 @@ $ python setup.py install
 
 
 ### TODO
+
+
+pip install --extra-index-url https://test.pypi.org/simple/ pinpointPy

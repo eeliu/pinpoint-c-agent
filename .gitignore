@@ -26,3 +26,6 @@ core.*
 __pycache__/
 modules
 env
+dist
+.deps
+temp
