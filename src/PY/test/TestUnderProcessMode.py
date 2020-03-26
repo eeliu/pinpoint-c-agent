@@ -6,6 +6,10 @@ import pinpointPy
 
 
 class TestUnderProcessMode(TestCase):
+
+    def tearDown(self):
+        pinpointPy.force_flush_trace(4)
+
     def _test_api_flow(self):
         self.assertTrue(pinpointPy.set_collector(collector_host='unix:/tmp/unexist.sock'))
         # self.assertTrue(pinpointPy.enable_debug(None))

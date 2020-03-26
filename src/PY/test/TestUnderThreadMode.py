@@ -10,6 +10,9 @@ class TestUnderThreadMode(TestCase):
     def setUp(self) -> None:
         self.thread_running = True
 
+    def tearDown(self):
+        pinpointPy.force_flush_trace(4)
+
     def _test_api_flow(self):
         self.assertTrue(pinpointPy.set_collector(collector_host='unix:/tmp/unexist.sock'))
         # self.assertTrue(pinpointPy.enable_debug(None))

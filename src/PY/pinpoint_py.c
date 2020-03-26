@@ -118,6 +118,32 @@ static PyObject *py_check_tracelimit(PyObject *self, PyObject *args)
 
 }
 
+
+
+static PyObject *py_force_flush_span(PyObject *self, PyObject *args)
+{
+    int32_t timeout= 3;
+
+    if(! PyArg_ParseTuple(args,"|i",&timeout))
+    {
+        return NULL;
+    }
+    if(global_agent_info.debug_report == 1)
+    {
+        pinpoint_force_flush_span(timeout);
+    }
+    else
+    {
+        Py_BEGIN_ALLOW_THREADS
+        pinpoint_force_flush_span(timeout);
+        Py_END_ALLOW_THREADS
+    }
+
+    return Py_BuildValue("O",Py_True);
+}
+
+
+
 static PyObject *py_pinpoint_start_trace(PyObject *self,CYTHON_UNUSED  PyObject *unused)
 {
     int ret = 0;
@@ -367,6 +393,7 @@ static PyMethodDef PinpointMethods[] = {
     {"get_special_key", py_pinpoint_get_key, METH_VARARGS, "def get_special_key(key)->string "},
     {"check_tracelimit", py_check_tracelimit, METH_VARARGS, "check_tracelimit(long timestamp): check trace whether is limit"},
     {"enable_debug", py_pinpoint_enable_utest, METH_VARARGS, "enable logging output(callback )"},
+    {"force_flush_trace", py_force_flush_span, METH_VARARGS, "force flush span during timeout"},
     {"mark_as_error",py_pinpoint_mark_an_error,METH_VARARGS,"def mark_as_error(string msg,string file_name,uint line_no) #This trace found an error"},
     {"set_collector",(PyCFunction)py_set_collector, METH_VARARGS|METH_KEYWORDS, "def set_collector(collector_host=\"unix:/tmp/collector-agent.sock or tcp:host:port\",trace_limit=100)"},
     { NULL, NULL, 0, NULL}

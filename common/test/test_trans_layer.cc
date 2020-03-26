@@ -56,7 +56,7 @@ int fack_server()
         header->length = htonl(len);
         int ret = send(cfd,buffer,len+sizeof(*header),0);
         pp_trace("send[%d] %s [%d] %s ",cfd,buffer,ret,strerror(errno));
-        sleep(2);
+        recv(cfd,buffer,1024,0);
         close(cfd);
     }
     return 0;
@@ -91,7 +91,9 @@ TEST(translayer, unix_socket_layer)
     while(run){
         layer.trans_layer_pool();
     }
-
+    std::string data="msg-1918";
+    layer.sendMsgToAgent(data);
+    layer.forceFlushMsg(10);
     kill(pid,SIGQUIT);
     waitpid(pid,0,0);
 

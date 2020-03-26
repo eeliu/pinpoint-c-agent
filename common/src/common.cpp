@@ -138,7 +138,7 @@ public:
             ancestor.node.clear();
             this->stack.pop();
             this->translayer.trans_layer_pool();
-            // after this, specical keys are dropped
+            // after this, special keys are dropped
             this->special_keys.clear();
         }
         else if(this->stack.size() > 1) // descendants
@@ -168,13 +168,13 @@ public:
             this->stack.push(child);
             agent->fetal_error_time = 0; // reset fetal_error_time
         }else{ // ancestor
-            this->translayer.trans_layer_pool();
             TraceNode ancestor(this->root);
             ancestor.node["S"] = timestamp;
             ancestor.node["FT"]= global_agent_info.agent_type;
             ancestor.ancestor_start_time = timestamp;
             ancestor.start_time = timestamp;
             this->stack.push(ancestor);
+            this->translayer.trans_layer_pool();
         }
         return this->stack.size();
     }
@@ -182,6 +182,11 @@ public:
     inline uint getStackSize()
     {
         return this->stack.size();
+    }
+
+    inline void forceFlushTrace(uint32_t timeout)
+    {
+        this->translayer.forceFlushMsg(timeout);
     }
 
     void AddClue(const char* key,const char* value)
@@ -641,3 +646,15 @@ const char* pinpoint_get_special_key(const char* key)
     }
     return p_agent->getKey(key);
 }
+
+void pinpoint_force_flush_span(uint32_t timeout)
+{
+    PerThreadAgent* p_agent = get_agent();
+    if(p_agent == NULL)
+    {
+        return ;
+    }
+
+    return p_agent->forceFlushTrace(timeout);
+}
+

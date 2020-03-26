@@ -97,6 +97,7 @@ void pinpoint_add_clue(const  char* key,const  char* value);
 void pinpoint_set_special_key(const char* key,const char* value);
 const char* pinpoint_get_special_key(const char* key);
 bool check_tracelimit(int64_t timestamp);
+void pinpoint_force_flush_span(uint32_t timeout);
 int64_t generate_unique_id(void);
 void pinpoint_drop_trace(void);
 const char* pinpoint_app_id(void);

@@ -40,14 +40,14 @@
 
 class TransLayer{
 
-enum E_STATE{S_WRITTING,S_READING};
+enum E_STATE{S_WRITING=0x1,S_READING=0x2,S_ERROR=0x4};
 
 public:
 explicit TransLayer(const PPAgentT *_agent,uint w_timeout_ms):
     agent(_agent),
     chunks(1024*1024,1024),
     w_timeout_ms(w_timeout_ms),
-    _state(S_READING),
+    _state(0),
     c_fd(-1)
     {
     }
@@ -59,16 +59,34 @@ explicit TransLayer(const PPAgentT *_agent,uint w_timeout_ms):
         }
     }
 
-    size_t trans_layer_pool();
+    size_t trans_layer_pool(uint32_t timeout = 0);
     
     void sendMsgToAgent(const std::string &data)
     {
         uint32_t len = data.size();
-        if ( this->chunks.copyDataIntoChunks(data.data(),len) != 0)
+        if ( this->chunks.copyDataIntoChunks(data.data(),len) != 0)// _state must be writing
         {
             pp_trace("Send buffer is full. size:[%d]",len);
             return ;
         }
+        this->_state |=  S_WRITING;
+    }
+
+    /**
+     * retry in three times
+     * @param timeout
+     */
+    void forceFlushMsg(uint32_t timeout)
+    {
+#define MAX_RETRY_TIEMS 3
+        int retry =0;
+        timeout = (timeout >=3) ?(timeout):(3);
+        while( (this->_state & S_WRITING) && retry < MAX_RETRY_TIEMS )
+        {
+            this->trans_layer_pool(timeout/3);
+            retry ++;
+        }
+#undef  MAX_RETRY_TIEMS
     }
 
     ~TransLayer()
@@ -95,7 +113,7 @@ private:
         const char* substring = NULL;
         if(statement == NULL || statement[0] == '\0')
         {
-            goto DONE;
+            goto ERROR;
         }
 
         /// unix
@@ -120,31 +138,33 @@ private:
             goto DONE;
         }
 
-
+ERROR:
         pp_trace("remote is not valid:%s",statement);
-    DONE:
-
+        return -1;
+DONE:
+        this->_state |= (S_ERROR|S_READING);
         return fd;
     }
 
-    int send_msg_to_collector()
+    int _send_msg_to_collector()
     {
-        return chunks.drainOutWithPipe(std::bind(&TransLayer::do_write_data,this,std::placeholders::_1,std::placeholders::_2));
+        return chunks.drainOutWithPipe(std::bind(&TransLayer::_do_write_data,this,std::placeholders::_1,std::placeholders::_2));
     }
 
-    void reset_remote( )
+    void _reset_remote( )
     {
         if(c_fd > 0)
         {
             pp_trace("reset peer:%d",c_fd);
             close(c_fd);
             c_fd = -1;
+            this->_state = 0;
         }
 
         chunks.resetChunks();
     }
 
-    int do_write_data(const char *data,uint length)
+    int _do_write_data(const char *data,uint length)
     {
         const char* buf = data;
         uint buf_ofs = 0;
@@ -169,10 +189,11 @@ private:
                 return -1;
             }
         }
+        this->_state &=  (~S_WRITING);
         return length;
     }
 
-    int recv_msg_from_collector()
+    int _recv_msg_from_collector()
     {
         int next_size = 0;
         while(next_size < IN_MSG_BUF_SIZE){
@@ -238,7 +259,7 @@ private:
     const PPAgentT *agent;
     Chunks        chunks;
     uint          w_timeout_ms;
-    E_STATE       _state;
+    int32_t       _state;
     char          in_buf[IN_MSG_BUF_SIZE]= {0};
     std::function<void(int)> stateChangeCallBack;
     std::function<void(int type,const char* buf,size_t len)> peerMsgCallback;

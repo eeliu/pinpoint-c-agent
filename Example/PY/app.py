@@ -57,12 +57,13 @@ from DBControl import DBContrl
 app = Flask(__name__)
 
 from MyMidWare import MyMidWare
-app.wsgi_app = MyMidWare(app.wsgi_app)
+app.wsgi_app = MyMidWare(app,app.wsgi_app)
 
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
     return render_template("index.html")
+
 
 
 GREETING = "Hello World!"
@@ -364,4 +365,4 @@ def signin():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0',processes=4,threaded=False)
