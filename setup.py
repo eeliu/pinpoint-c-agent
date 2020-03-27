@@ -11,7 +11,7 @@ class CommonBuild(build_ext):
             os.makedirs(self.build_temp)
 
         comm_path = os.path.abspath('common')
-        subprocess.check_call(['cmake',comm_path],cwd=self.build_temp)
+        subprocess.check_call(['cmake','-DCMAKE_BUILD_TYPE=Release',comm_path],cwd=self.build_temp)
         subprocess.check_call(['cmake', '--build', '.'], cwd=self.build_temp)
 
     def run(self):

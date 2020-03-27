@@ -72,6 +72,12 @@ typedef struct pp_agent_s{
     VOID_FUNC release_lock;
 }PPAgentT;
 
+enum E_ANGET_STATUS{
+    E_OFFLINE = 0x1,
+    E_TRACE_PASS =0x2,
+    E_TRACE_BLOCK =0x4
+};
+
 /**
  *pinpoint_start_trace
  *pinpoint_end_trace

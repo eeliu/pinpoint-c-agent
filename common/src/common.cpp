@@ -31,17 +31,14 @@ static inline uint64_t get_current_msec_stamp();
 
 const static char* CLUSE="clues";
 
-enum E_SHM_OFFSET{
-    UNIQUE_ID_OFFSET = 0,
-    TRACE_LIMIT_OFFSET= 8,
-    TRIGER_OFFSET=16,
-};
+typedef struct _SharedState{
+    int64_t uid;
+    int64_t timestamp;
+    int64_t tick;
+    uint64_t starttime;
+    int64_t state;
+}SharedState;
 
-enum E_ANGET_STATUS{
-    E_OFFLINE= 0,
-    E_TRACE_PASS,
-    E_TRACE_BLOCK
-};
 
 class TraceNode
 {
@@ -67,22 +64,27 @@ public:
     {
         this->fetal_error_time = 0;
 
-        /**
-         * Max [ 0 ~ pagesize ]
-         * |  uid   | timestamp | triger  |
-         *   [0~7]      [8~15]    [16~23]
-         */
-        this->uid       = (int64_t*)((char*)fetch_shared_obj_addr() + UNIQUE_ID_OFFSET);
-        this->triger_timestamp = (int64_t*)((char*)fetch_shared_obj_addr() + TRACE_LIMIT_OFFSET);
-        this->triger    =  (int64_t*)((char*)fetch_shared_obj_addr() + TRIGER_OFFSET );
+//        /**
+//         * Max [ 0 ~ pagesize ]
+//         * |  uid   | timestamp | triger  |
+//         *   [0~7]      [8~15]    [16~23]
+//         */
+//        this->uid = (int64_t*)((char*)fetch_shared_obj_addr() + UNIQUE_ID_OFFSET);
+//        this->triger_timestamp = (int64_t*)((char*)fetch_shared_obj_addr() + TRACE_LIMIT_OFFSET);
+//        this->tick_tick  =  (int64_t*)((char*)fetch_shared_obj_addr() + TRIGER_OFFSET );
+//        this->start_time =(uint64_t*)((char*)fetch_shared_obj_addr() + START_TIME_OFFSET );
+
+        this->_state = (SharedState*)fetch_shared_obj_addr();
+        this->limit   = (this->_state->state & E_OFFLINE) ? (E_OFFLINE) : (E_TRACE_PASS);
         this->app_name = "collector_blocking";
         this->app_id = "collector_blocking";
-        this->limit = E_OFFLINE;
-        this->start_time =get_current_msec_stamp();
         json_writer.dropNullPlaceholders();
         json_writer.omitEndingLineFeed();
         using namespace std::placeholders;
-        this->translayer.registerPeerMsgCallback(std::bind(&PerThreadAgent::_handleMsgFromCollector,this,_1,_2,_3));
+        this->translayer.registerPeerMsgCallback(
+                std::bind(&PerThreadAgent::_handleMsgFromCollector,this,_1,_2,_3),
+                std::bind(&PerThreadAgent::_handleTransLayerState,this,_1)
+        );
 
     }
 
@@ -111,7 +113,7 @@ public:
         }
     }
 
-    int32_t endTrace(PerThreadAgent* agent)
+    int32_t endTrace()
     {
         if( this->stack.size() == 1 ) // ancestor node
         {
@@ -153,7 +155,7 @@ public:
         return this->stack.size();
     }
     
-    int32_t startTrace(PerThreadAgent* agent)
+    int32_t startTrace()
     {
         pp_trace("pinpoint_start start");
         uint64_t timestamp =  get_current_msec_stamp();
@@ -166,15 +168,15 @@ public:
             child.ancestor_start_time = parent.ancestor_start_time;
             child.start_time = timestamp;
             this->stack.push(child);
-            agent->fetal_error_time = 0; // reset fetal_error_time
+            this->fetal_error_time = 0; // reset fetal_error_time
         }else{ // ancestor
+            this->translayer.trans_layer_pool();
             TraceNode ancestor(this->root);
             ancestor.node["S"] = timestamp;
             ancestor.node["FT"]= global_agent_info.agent_type;
             ancestor.ancestor_start_time = timestamp;
             ancestor.start_time = timestamp;
             this->stack.push(ancestor);
-            this->translayer.trans_layer_pool();
         }
         return this->stack.size();
     }
@@ -244,24 +246,24 @@ public:
         {
             goto BLOCK;
         }
-        else if(*this->triger_timestamp != ts )
+        else if( this->_state->timestamp != ts )
         {
             __sync_synchronize();
-            *this->triger_timestamp = ts;
-            *triger = 0 ;
+            this->_state->timestamp = ts;
+            this->_state->tick = 0 ;
         }
-        else if(*triger >= this->trace_limit)
+        else if(this->_state->tick >= this->trace_limit)
         {
             goto BLOCK;
         }else
         {
-            __sync_add_and_fetch(this->triger,1);
+            __sync_add_and_fetch(&this->_state->tick,1);
 
         }
         this->limit = E_TRACE_PASS;
         return false;
 BLOCK:
-        pp_trace("This span dropped. trace_limit:%d limit:%d",this->trace_limit,this->limit);
+        pp_trace("This span dropped. trace_limit:%d limit:%d tick:%d",this->trace_limit,this->limit,this->_state->tick);
 OFFLINE:
         this->limit = E_TRACE_BLOCK;
         return true;
@@ -286,12 +288,12 @@ OFFLINE:
 
     uint64_t generateUniqueId()
     {
-        return __sync_fetch_and_add(this->uid,1);
+        return __sync_fetch_and_add(&this->_state->uid,1);
     }
 
     inline uint64_t getStartTime() const
     {
-        return this->start_time;
+        return this->_state->starttime;
     }
 
     inline const std::string& getAppId() const
@@ -305,6 +307,16 @@ OFFLINE:
     }
 
 private:
+
+    void _handleTransLayerState(int state)
+    {
+        if(state == E_OFFLINE)
+        {
+            this->limit = E_OFFLINE;
+            this->_state->state |= E_OFFLINE;
+        }
+    }
+
 
     void _handleMsgFromCollector(int type,const char* buf,size_t len)
     {
@@ -332,20 +344,20 @@ private:
         }
 
         if(root.isMember("time")){
-            this->start_time = atoll(root["time"].asCString());
+            this->_state->starttime= atoll(root["time"].asCString());
         }
 
         if(root.isMember("id")){
-            this->app_id      =  root["id"].asString();
+           this->app_id      =  root["id"].asString();
         }
 
-        if(root.isMember("name")){
-            this->app_name    = root["name"].asString();
-        }
+       if(root.isMember("name")){
+           this->app_name    = root["name"].asString();
+       }
 
         this->limit= E_TRACE_PASS;
-
-        pp_trace("starttime:%ld appid:%s appname:%s",this->start_time,this->app_id.c_str(),this->app_name.c_str());
+        this->_state->state |= E_TRACE_PASS;
+        pp_trace("starttime:%ld appid:%s appname:%s",this->_state->starttime,this->app_id.c_str(),this->app_name.c_str());
     }
 
 
@@ -353,16 +365,14 @@ private:
 private:
     // const char**co_host; // tcp:ip:port should support dns
     uint  timeout_ms;
-    E_ANGET_STATUS  limit;
+    uint64_t  limit;
     const int   trace_limit;
     uint64_t   fetal_error_time;
-    int64_t * triger_timestamp;
-    int64_t*  triger;
-    int64_t*  uid;
+    SharedState* _state;
+
     char log_buf[LOG_SIZE]={0};
     std::string app_name;
     std::string app_id;
-    uint64_t start_time;
     Json::Value root;
     TransLayer translayer;
     Stack stack;
@@ -499,7 +509,7 @@ int32_t pinpoint_start_trace()
     {
         return 0;
     }
-    return p_agent->startTrace(p_agent);
+    return p_agent->startTrace();
 }
 
 
@@ -510,7 +520,7 @@ int32_t pinpoint_end_trace()
     {
         return 0;
     }
-    return p_agent->endTrace(p_agent);
+    return p_agent->endTrace();
 }
 
 inline uint64_t get_current_msec_stamp()

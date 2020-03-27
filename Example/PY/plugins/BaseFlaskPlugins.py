@@ -112,8 +112,8 @@ class BaseFlaskPlugins(Candy):
                 self.isLimit = True
                 pinpointPy.drop_trace()
         else:
-            # self.isLimit = pinpointPy.check_tracelimit()
-            print(self.isLimit)
+            pinpointPy.check_tracelimit()
+            # print(self.isLimit)
         pinpointPy.add_clue('tid',self.tid)
         pinpointPy.add_clue('sid',self.sid)
         ###############################################################
@@ -121,9 +121,9 @@ class BaseFlaskPlugins(Candy):
 
     def onEnd(self,ret):
         ###############################################################
-        if self.isLimit:
-            pinpointPy.drop_trace()
+
         print("------------------- call end -----------------------")
+
         ###############################################################
         super().onEnd(ret)
         self.isLimit = False

@@ -16,5 +16,5 @@ $v3= pinpoint_unique_id();
 var_dump( $v2*2 === $v1+$v3 );
 
 --EXPECTF--
-[pinpoint] [%d] [%d]agent status changed: 0 ->1
+[pinpoint] [%d] [%d]agent status changed: 2 ->2
 bool(true)

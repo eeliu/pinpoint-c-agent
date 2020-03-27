@@ -82,7 +82,7 @@ pinpointPy.set_collector(collector_host=COLLECTOR_HOST)
 # def output(msg):
 #     print(msg)
 #
-pinpointPy.enable_debug(None)
+# pinpointPy.enable_debug(None)
 
 class Candy(object):
     def __init__(self,class_name,module_name):

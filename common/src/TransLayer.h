@@ -42,6 +42,8 @@ class TransLayer{
 
 enum E_STATE{S_WRITING=0x1,S_READING=0x2,S_ERROR=0x4};
 
+
+
 public:
 explicit TransLayer(const PPAgentT *_agent,uint w_timeout_ms):
     agent(_agent),
@@ -52,11 +54,18 @@ explicit TransLayer(const PPAgentT *_agent,uint w_timeout_ms):
     {
     }
 
-    void registerPeerMsgCallback(std::function<void(int type,const char* buf,size_t len)> _peerMsgCallback)
+    void registerPeerMsgCallback(std::function<void(int type,const char* buf,size_t len)> _peerMsgCallback,
+            std::function<void(int state)> chann_error_cb  )
     {
         if(_peerMsgCallback){
             this->peerMsgCallback = _peerMsgCallback;
         }
+
+        if(chann_error_cb)
+        {
+            this->chann_error_cb =chann_error_cb;
+        }
+
     }
 
     size_t trans_layer_pool(uint32_t timeout = 0);
@@ -80,7 +89,7 @@ explicit TransLayer(const PPAgentT *_agent,uint w_timeout_ms):
     {
 #define MAX_RETRY_TIEMS 3
         int retry =0;
-        timeout = (timeout >=3) ?(timeout):(3);
+        timeout = (timeout >3) ?(timeout):(3);
         while( (this->_state & S_WRITING) && retry < MAX_RETRY_TIEMS )
         {
             this->trans_layer_pool(timeout/3);
@@ -159,6 +168,11 @@ DONE:
             close(c_fd);
             c_fd = -1;
             this->_state = 0;
+        }
+
+        if(chann_error_cb)
+        {
+            chann_error_cb(E_OFFLINE);
         }
 
         chunks.resetChunks();
@@ -261,7 +275,7 @@ private:
     uint          w_timeout_ms;
     int32_t       _state;
     char          in_buf[IN_MSG_BUF_SIZE]= {0};
-    std::function<void(int)> stateChangeCallBack;
+    std::function<void(int)> chann_error_cb;
     std::function<void(int type,const char* buf,size_t len)> peerMsgCallback;
     const static char* UNIX_SOCKET;
     const static char* TCP_SOCKET ;

@@ -15,11 +15,11 @@ pinpoint_add_clue("args",'a,$b');
 pinpoint_add_clue("ret",'a,$b');
 pinpoint_end_trace();
 --EXPECTF--
-[pinpoint] [%d] [%d]agent status changed: 0 ->1
+[pinpoint] [%d] [%d]agent status changed: 2 ->2
 [pinpoint] [%d] [%d]pinpoint_start start
 [pinpoint] [%d] [%d]agent try to connect:(unix:/unexist_file.sock)
 [pinpoint] [%d] [%d]connect:(/unexist_file.sock) failed as (No such file or directory)
-[pinpoint] [%d] [%d]agent status changed: 1 ->2
+[pinpoint] [%d] [%d]agent status changed: 2 ->4
 [pinpoint] [%d] [%d]agent try to connect:(unix:/unexist_file.sock)
 [pinpoint] [%d] [%d]connect:(/unexist_file.sock) failed as (No such file or directory)
 [pinpoint] [%d] [%d]pinpoint_end_trace Done!

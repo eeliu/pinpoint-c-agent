@@ -188,19 +188,19 @@ static PyObject *py_pinpoint_drop_trace(PyObject *self, CYTHON_UNUSED PyObject *
     return Py_BuildValue("O",Py_True);
 }
 
-static PyObject *py_pinpoint_app_id(PyObject *self, CYTHON_UNUSED PyObject *unused)
-{
-    const char* app_id = pinpoint_app_id();
+// static PyObject *py_pinpoint_app_id(PyObject *self, CYTHON_UNUSED PyObject *unused)
+// {
+//     const char* app_id = pinpoint_app_id();
 
-    return Py_BuildValue("s",app_id);
-}
+//     return Py_BuildValue("s",app_id);
+// }
 
-static PyObject *py_pinpoint_app_name(PyObject *self, CYTHON_UNUSED PyObject *unused)
-{
-    const char* app_name = pinpoint_app_name();
+// static PyObject *py_pinpoint_app_name(PyObject *self, CYTHON_UNUSED PyObject *unused)
+// {
+//     const char* app_name = pinpoint_app_name();
 
-    return Py_BuildValue("s",app_name);
-}
+//     return Py_BuildValue("s",app_name);
+// }
 
 
 static PyObject *py_pinpoint_start_time(PyObject *self, CYTHON_UNUSED PyObject *unused)
@@ -384,8 +384,8 @@ static PyMethodDef PinpointMethods[] = {
     {"end_trace", py_pinpoint_end_trace, METH_NOARGS, "def end_trace():# end currently matched trace"},
     {"unique_id", py_generate_unique_id, METH_NOARGS, "def unique_id()-> long"},
     {"drop_trace", py_pinpoint_drop_trace, METH_NOARGS, "def drop_trace():# drop this trace"},
-    {"app_id", py_pinpoint_app_id, METH_NOARGS, "def app_id()->string"},
-    {"app_name", py_pinpoint_app_name, METH_NOARGS, "def app_name()->string"},
+    // {"app_id", py_pinpoint_app_id, METH_NOARGS, "def app_id()->string"},
+    // {"app_name", py_pinpoint_app_name, METH_NOARGS, "def app_name()->string"},
     {"start_time", py_pinpoint_start_time, METH_NOARGS, "def start_time()->long"},
     {"add_clues", py_pinpoint_add_clues, METH_VARARGS, "def add_clues(string key,string value)"},
     {"add_clue", py_pinpoint_add_clue, METH_VARARGS, "def add_clue(string key,string value)"},

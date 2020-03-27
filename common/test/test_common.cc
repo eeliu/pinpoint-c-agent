@@ -92,7 +92,7 @@ TEST(common, fetch_id_name)
     const char* app_id = pinpoint_app_id();
     EXPECT_STREQ(app_name,"collector_blocking");
     EXPECT_STREQ(app_id,"collector_blocking");
-    EXPECT_TRUE(pinpoint_start_time()>0);
+    EXPECT_TRUE(pinpoint_start_time()==0);
 }
 
 
