@@ -38,14 +38,12 @@ abstract class Candy
         $this->who =  $who;
         $this->args = &$args;
 
-        echo $apId." start <br> ";
         pinpoint_start_trace();
         pinpoint_add_clue("name",$apId);
     }
 
     public function __destruct()
     {
-        echo $this->apId." end <br>";
         pinpoint_end_trace();
     }
 

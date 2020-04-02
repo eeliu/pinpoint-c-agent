@@ -248,9 +248,9 @@ public:
         }
         else if( this->_state->timestamp != ts )
         {
-            __sync_synchronize();
             this->_state->timestamp = ts;
             this->_state->tick = 0 ;
+            __sync_synchronize();
         }
         else if(this->_state->tick >= this->trace_limit)
         {
@@ -258,7 +258,6 @@ public:
         }else
         {
             __sync_add_and_fetch(&this->_state->tick,1);
-
         }
         this->limit = E_TRACE_PASS;
         return false;

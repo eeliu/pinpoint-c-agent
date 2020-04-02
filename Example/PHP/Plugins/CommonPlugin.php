@@ -47,13 +47,13 @@ class CommonPlugin extends Candy
     ///@hook:app\DBcontrol::connectDb
     public function onBefore(){
         pinpoint_add_clue("stp",PHP_METHOD);
-        pinpoint_add_clues(PHP_ARGS,print_r($this->args,true));
+        pinpoint_add_clues(PHP_ARGS,"input");
     }
 
     ///@hook:app\DBcontrol::getData1 app\DBcontrol::\array_push
     public function onEnd(&$ret){
-        var_dump($ret);
-        pinpoint_add_clues(PHP_RETURN,print_r($this->ret,true));
+//        var_dump($ret);
+//        pinpoint_add_clues(PHP_RETURN,"output");
     }
 
     ///@hook:app\DBcontrol::getData2

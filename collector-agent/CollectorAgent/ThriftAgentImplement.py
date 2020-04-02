@@ -19,7 +19,7 @@
 # ------------------------------------------------------------------------------
 import os,struct
 
-from CollectorAgent.GrpcAPIMeta import *
+from CollectorAgent.ThriftAPIMeta import *
 from CollectorAgent.GrpcAgentStateManager import GrpcAgentStateManager
 from CollectorAgent.TPackets import ControlMessageDecoder, ControlMessage, HandShakeMessage, ChannelBufferV2, TAgentInfo
 from CollectorAgent.ThriftSpanFactory import ThriftSpanFactory
@@ -107,9 +107,9 @@ class ThriftAgentImplement(PinpointAgent):
         if name in self.api_metas:
             return self.api_metas[name]
         else:
-            meta = GrpcAPIMeta(name=name, type=api_type,
-                               agentStartTime=self.startTimeStamp, agentId=self.app_id,
-                               agentName=self.app_name)
+            meta = ThriftAPIMeta(name=name, type=api_type,
+                                 agentStartTime=self.startTimeStamp, agentId=self.app_id,
+                                 agentName=self.app_name)
             self.sendMsgToCollector(meta.toPacket().getSerializedData())
             self.api_metas[name] = meta
             return meta
@@ -117,7 +117,7 @@ class ThriftAgentImplement(PinpointAgent):
     def sendMeta(self, meta):
         '''
 
-        :param GrpcAPIMeta meta:
+        :param ThriftAPIMeta meta:
         :return:
         '''
         TCLogger.debug("meta: %s", meta.name)

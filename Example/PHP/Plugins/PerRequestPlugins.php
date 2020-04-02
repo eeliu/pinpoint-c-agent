@@ -85,13 +85,11 @@ class PerRequestPlugins
         {
             $this->psid = $_SERVER['HTTP_PINPOINT_PSPANID'];
             pinpoint_add_clue("psid",$this->psid);
-            echo "psid: $this->psid \n";
         }
 
         if(isset($_SERVER['HTTP_PINPOINT_SPANID']) || array_key_exists("HTTP_PINPOINT_SPANID",$_SERVER))
         {
             $this->sid = $_SERVER['HTTP_PINPOINT_SPANID'];
-            echo "sid: $this->sid \n";
         }else{
             $this->sid = $this->generateSpanID();
         }
@@ -99,7 +97,6 @@ class PerRequestPlugins
         if(isset($_SERVER['HTTP_PINPOINT_TRACEID']) || array_key_exists("HTTP_PINPOINT_TRACEID",$_SERVER))
         {
             $this->tid = $_SERVER['HTTP_PINPOINT_TRACEID'];
-            echo "tid: $this->tid\n";
         }else{
             $this->tid = $this->generateTransactionID();
         }
@@ -109,21 +106,18 @@ class PerRequestPlugins
             $this->pname = $_SERVER['HTTP_PINPOINT_PAPPNAME'];
 
             pinpoint_add_clue('pname',$this->pname);
-            echo "pname: $this->pname";
         }
 
         if(isset($_SERVER['HTTP_PINPOINT_PAPPTYPE']) || array_key_exists("HTTP_PINPOINT_PAPPTYPE",$_SERVER))
         {
             $this->ptype = $_SERVER['HTTP_PINPOINT_PAPPTYPE'];
             pinpoint_add_clue('ptype',$this->ptype);
-            echo "ptype: $this->pname";
         }
 
         if(isset($_SERVER['HTTP_PINPOINT_HOST']) || array_key_exists("HTTP_PINPOINT_HOST",$_SERVER))
         {
             $this->ah = $_SERVER['HTTP_PINPOINT_HOST'];
             pinpoint_add_clue('Ah',$this->ah);
-            echo "Ah: $this->ah";
         }
         if(isset($_SERVER[NGINX_PROXY]) ||array_key_exists(NGINX_PROXY,$_SERVER))
         {

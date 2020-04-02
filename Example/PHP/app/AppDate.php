@@ -6,7 +6,20 @@ namespace app;
 
 class AppDate
 {
+    static function consumerCPU($i)
+    {
+        $ret  = 0;
+        for ($t =0 ;$t<$i;$t++)
+        {
+            for($a = 0;$a<$t;$a++)
+            {
+                $ret+=$a;
+            }
+        }
+        return $ret;
+    }
     static function outputDate(){
+        echo static::consumerCPU(1000).'<br>';
         echo date("Y/m/d")."<br>";
         echo getenv('REMOTE_ADDR')."<br>";
         echo getenv('HTTP_HOST')."<br>";

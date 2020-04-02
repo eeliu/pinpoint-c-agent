@@ -19,7 +19,8 @@
 namespace Plugins;
 use Plugins\Candy;
 
-///@hook:app\TestMemcached::\memcached::addServer app\TestMemcached::\memcached::add app\TestMemcached::\memcached::get app\TestMemcached::\memcached::replace app\TestMemcached::\memcached::delete
+//// note disabled memcached test
+////@hook:app\TestMemcached::\memcached::addServer app\TestMemcached::\memcached::add app\TestMemcached::\memcached::get app\TestMemcached::\memcached::replace app\TestMemcached::\memcached::delete
 class MemcachedCommonPlugin extends Candy
 {
     function onBefore()
@@ -37,7 +38,6 @@ class MemcachedCommonPlugin extends Candy
     }
     function onEnd(&$ret)
     {
-        echo "ret:";
         pinpoint_add_clues(PHP_RETURN, print_r($ret,true));
     }
 

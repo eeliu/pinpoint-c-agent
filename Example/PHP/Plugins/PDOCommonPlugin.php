@@ -36,8 +36,7 @@ class PDOCommonPlugin extends Candy
     }
     function onEnd(&$ret)
     {
-        echo "ret:";
-        var_dump($ret);
+//        var_dump($ret);
     }
 
     function onException($e)
