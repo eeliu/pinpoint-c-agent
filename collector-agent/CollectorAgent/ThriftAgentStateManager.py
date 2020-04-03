@@ -25,7 +25,7 @@ from PinpointAgent.Type import AGENT_STAT_BATCH
 from Proto.Trift.Pinpoint.ttypes import TAgentStat, TCpuLoad, TAgentStatBatch
 
 
-class GrpcAgentStateManager(object):
+class ThriftAgentStateManager(object):
     def __init__(self, agentId, startTimeStamp, host):
         self.state = TAgentStat()
         self.cup_load = TCpuLoad()

@@ -20,7 +20,7 @@
 import os,struct
 
 from CollectorAgent.ThriftAPIMeta import *
-from CollectorAgent.GrpcAgentStateManager import GrpcAgentStateManager
+from CollectorAgent.ThriftAgentStateManager import ThriftAgentStateManager
 from CollectorAgent.TPackets import ControlMessageDecoder, ControlMessage, HandShakeMessage, ChannelBufferV2, TAgentInfo
 from CollectorAgent.ThriftSpanFactory import ThriftSpanFactory
 from Common.AgentHost import AgentHost
@@ -78,7 +78,7 @@ class ThriftAgentImplement(PinpointAgent):
             pid=os.getpid()
         )
 
-        self.agentState = GrpcAgentStateManager(self.app_id, self.startTimeStamp, self.statHost)
+        self.agentState = ThriftAgentStateManager(self.app_id, self.startTimeStamp, self.statHost)
         self.postponed_queue = []
         self.scanLocalInfo()
         self.api_metas = {}
