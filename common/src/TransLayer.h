@@ -47,7 +47,7 @@ enum E_STATE{S_WRITING=0x1,S_READING=0x2,S_ERROR=0x4};
 public:
 explicit TransLayer(const PPAgentT *_agent,uint w_timeout_ms):
     agent(_agent),
-    chunks(1024*1024,1024),
+    chunks(1024*1024,1024*40),
     w_timeout_ms(w_timeout_ms),
     _state(0),
     c_fd(-1)
