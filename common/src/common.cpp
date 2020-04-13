@@ -232,12 +232,13 @@ public:
     bool checkTraceLimit(int64_t timestamp)
     {
         time_t ts = (timestamp != -1) ?(timestamp) :(time(NULL));
-
-        if(this->limit == E_OFFLINE)
-        {
-            pp_trace("collector-agent not available");
-            goto OFFLINE;
-        }
+        
+        // disable this checking, make it working even offline
+        // if(this->limit == E_OFFLINE)
+        // {
+        //     pp_trace("collector-agent not available");
+        //     goto OFFLINE;
+        // }
 
         if(this->trace_limit < 0)
         {
@@ -263,7 +264,7 @@ public:
         return false;
 BLOCK:
         pp_trace("This span dropped. trace_limit:%d limit:%d tick:%d",this->trace_limit,this->limit,this->_state->tick);
-OFFLINE:
+// OFFLINE:
         this->limit = E_TRACE_BLOCK;
         return true;
 
