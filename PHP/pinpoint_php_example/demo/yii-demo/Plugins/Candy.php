@@ -1,3 +1,4 @@
+<?php
 #-------------------------------------------------------------------------------
 # Copyright 2019 NAVER Corp
 # 
@@ -13,15 +14,42 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 #-------------------------------------------------------------------------------
-#!/usr/bin/env python
-# -*- coding: UTF-8 -*-
 
-from __future__ import absolute_import
+/**
+ * User: eeliu
+ * Date: 1/4/19
+ * Time: 3:23 PM
+ */
 
-from CollectorAgent.ThriftAgentImplement import ThriftAgentImplement
-from CollectorAgent.CollectorAgentConf import CollectorAgentConf
-from CollectorAgent.Protocol import CollectorPro
-__all__= ['CollectorAgentConf', 'ThriftAgentImplement', 'CollectorPro']
+namespace Plugins;
+require_once "PluginsDefines.php";
 
+abstract class Candy
+{
+    protected $apId;
+    protected $who;
+    protected $args;
+    protected $ret=null;
 
+    public function __construct($apId,$who,&...$args)
+    {
+        /// todo start_this_aspect_trace
+        $this->apId = $apId;
+        $this->who =  $who;
+        $this->args = &$args;
 
+        pinpoint_start_trace();
+        pinpoint_add_clue("name",$apId);
+    }
+
+    public function __destruct()
+    {
+        pinpoint_end_trace();
+    }
+
+    abstract function onBefore();
+
+    abstract function onEnd(&$ret);
+
+    abstract function onException($e);
+}

@@ -1,3 +1,4 @@
+<?php
 #-------------------------------------------------------------------------------
 # Copyright 2019 NAVER Corp
 # 
@@ -13,11 +14,26 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 #-------------------------------------------------------------------------------
-#!/usr/bin/env python
-# -*- coding: UTF-8 -*-
 
-from Common.AgentHost import AgentHost
-from Common.Config import *
-from Common.Logger import PALogger, TCLogger
+namespace Plugins;
+use Plugins\Candy;
 
-__all__ = ["CAConfig", "PALogger", "TCLogger","AgentHost","PY2"]
+///@hook:controllers\SiteController::behaviors app\controllers\SiteController::actions app\controllers\SiteController::actionIndex app\controllers\SiteController::actionLogin
+//\\/@hook:\app\commands\HelloController::actionIndex
+class CommonPlugin extends Candy
+{
+    public function onBefore(){
+
+        pinpoint_add_clue("stp",PHP_METHOD);
+        pinpoint_add_clues(PHP_ARGS,print_r($this->args,true));
+    }
+
+    public function onEnd(&$ret){
+//        var_dump($ret);
+        pinpoint_add_clues(PHP_RETURN,print_r($this->ret,true));
+    }
+
+    public function onException($e){
+        pinpoint_add_clue("EXP",$e->getMessage());
+    }
+}
