@@ -88,11 +88,13 @@ public:
     // }
 
     /**
+     * @deprecated use setting timeout for endtrace
      * retry in three times
      * @param timeout
      */
     void forceFlushMsg(uint32_t timeout)
     {
+        // xxx no remote retry
 #define MAX_RETRY_TIEMS 3
         int retry =0;
         timeout = (timeout >3) ?(timeout):(3);
@@ -157,10 +159,14 @@ ERROR:
         pp_trace("remote is not valid:%s",statement);
         return -1;
 DONE:
-        this->_state |= (S_ERROR|S_READING);
         return fd;
     }
 
+    /**
+     *
+     * @return var: -1, connection was broken; socket & writing,send next time.
+     *                                                                                      if not, flush is done
+     */
     int _send_msg_to_collector()
     {
         return chunks.drainOutWithPipe(std::bind(&TransLayer::_do_write_data,this,std::placeholders::_1,std::placeholders::_2));
@@ -183,7 +189,12 @@ DONE:
 
         chunks.resetChunks();
     }
-
+    /**
+     *
+     * @param data
+     * @param length
+     * @return var == -1 connection is broken; >=0 had send `var` date
+     */
     int _do_write_data(const char *data,uint32_t length)
     {
         const char* buf = data;
@@ -288,6 +299,7 @@ private:
     std::function<void(int type,const char* buf,size_t len)> peerMsgCallback;
     const static char* UNIX_SOCKET;
     const static char* TCP_SOCKET ;
+    const static int RETRY_COUNT=3;
 public:
     int           c_fd;
 };

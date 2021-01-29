@@ -97,7 +97,7 @@ class GrpcSpan:
                     continue
                 self.send_span_count+=len(spans)
                 client.sendSpans(iter(spans))
-                TCLogger.debug("send %d", self.send_span_count)
+                TCLogger.debug("send span %d count", self.send_span_count)
             except Exception as e:
                 TCLogger.error("span channel catches an exception:%s", e)
                 client.reconnect()

@@ -134,55 +134,63 @@ size_t TransLayer::trans_layer_pool(uint32_t timeout)
         }
     }
     
-    int fd = c_fd;
-    fd_set wfds,efds,rfds;
-    FD_ZERO(&efds);
+    int retry_count = TransLayer::RETRY_COUNT;
 
-    FD_ZERO(&wfds);
-    FD_ZERO(&rfds);
-
-    if(this->_state & S_ERROR){
-        FD_SET(fd,&efds);
-    }
-
-    if(this->_state & S_WRITING){
-        FD_SET(fd,&wfds);
-    }
-
-    if(this->_state & S_READING){
-        FD_SET(fd,&rfds);
-    }
-
-    struct timeval tv = {0,(int)timeout *1000};
-
-    int retval = select(fd+1,&rfds,&wfds,&efds,&tv);
-    if(retval == -1)
+    do
     {
-//        pp_trace("select return error:(%s)",strerror(errno));
-        return -1;
-    }else if(retval >0 ){
+        int fd = c_fd;
+        fd_set wfds,efds,rfds;
+        FD_ZERO(&efds);
 
-        if((this->_state & S_ERROR) && FD_ISSET(fd,&efds)){
-            pp_trace("select fd:(%s) ",strerror(errno));
-            goto ERROR;
+        FD_ZERO(&wfds);
+        FD_ZERO(&rfds);
+
+        // always set error&read flag
+        FD_SET(fd,&efds);
+        FD_SET(fd,&rfds);
+
+        if(this->_state & S_WRITING){
+            FD_SET(fd,&wfds);
         }
 
-        if((this->_state & S_WRITING) && FD_ISSET(fd,&wfds)){
-            if(_send_msg_to_collector() == -1){
-                goto ERROR;
+        struct timeval tv = {0,(int)timeout *1000};
+
+        int retval = select(fd+1,&rfds,&wfds,&efds,&tv);
+        if(retval == -1)
+        {
+        //        pp_trace("select return error:(%s)",strerror(errno));
+           return -1;
+        }else if(retval >0 ){
+
+            if((this->_state & S_READING) && FD_ISSET(fd,&rfds)){
+                if(_recv_msg_from_collector() == -1){
+                    pp_trace("recv_msg_from_collector error");
+                    goto ERROR;
+                }
             }
+
+
+           if((this->_state & S_WRITING) && FD_ISSET(fd,&wfds)){
+               if(_send_msg_to_collector() == -1){
+                   goto ERROR;
+               }
+           }
+
+           if(FD_ISSET(fd,&efds)){
+                 pp_trace("select fd:(%s) ",strerror(errno));
+                 goto ERROR;
+           }
+
+        }else{
+           // timeout do nothing
+           // total =0  ,timeout
         }
 
-        if((this->_state & S_READING) && FD_ISSET(fd,&rfds)){
-            if(_recv_msg_from_collector() == -1){
-                pp_trace("recv_msg_from_collector error");
-                goto ERROR;
-            }
+        if( (this->_state & S_WRITING)  == 0){ // sending is done, no more retry
+            break;
         }
-    }else{
-        // timeout do nothing
-        // total =0  ,timeout
     }
+    while( timeout > 0 && --retry_count);
 
     return 0;
 
