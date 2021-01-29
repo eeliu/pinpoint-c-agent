@@ -96,7 +96,7 @@ void SpanConnectionPool::_handle_agent_info(int type,const char* buf,size_t len)
 
     if(ok)
     {
-        // pp_trace("collector-agent say:%s",root.toStyledString().c_str());
+        pp_trace("collector-agent say:%s",root.toStyledString().c_str());
 
         if(root.isMember("time")){
             SafeSharedState::instance().updateStartTime(atoll(root["time"].asCString()));

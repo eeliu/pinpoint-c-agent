@@ -16,7 +16,6 @@ class AppDate
 //        throw new \Exception("I want throw something");
 //        print_r(ini_get_all('pinpoint_php'));
 //        echo ini_get('pinpoint_php.CollectorHost')."\n";
-//        echo ini_get('pinpoint_php.SendSpanTimeOutMs')."\n";
 //        var_dump(ini_get('pinpoint_php.UnitTest"'));
 //
 //        echo ini_get('pinpoint_php.AppId')."\n";

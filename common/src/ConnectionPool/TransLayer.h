@@ -73,7 +73,7 @@ public:
 
     }
     
-    size_t trans_layer_pool(uint32_t);
+    size_t trans_layer_pool(int32_t);
     
     void sendMsgToAgent(const std::string &data);
 
@@ -299,7 +299,7 @@ private:
     std::function<void(int type,const char* buf,size_t len)> peerMsgCallback;
     const static char* UNIX_SOCKET;
     const static char* TCP_SOCKET ;
-    const static int RETRY_COUNT=3;
+    const static int RETRY_COUNT=10;
 public:
     int           c_fd;
 };

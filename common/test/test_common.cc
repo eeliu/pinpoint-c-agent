@@ -99,11 +99,11 @@ TEST(common,start_end_trace)
 
     mark_current_trace_status(id,E_TRACE_PASS);
     catch_error(id,"sdfasfas","fsafdsfasd",234);
-    id = pinpoint_end_trace(id);
+    id = pinpoint_end_trace(id,0);
 
-    id = pinpoint_end_trace(id);
+    id = pinpoint_end_trace(id,0);
 
-    id = pinpoint_end_trace(id);
+    id = pinpoint_end_trace(id,0);
     EXPECT_EQ(id,0);
 }
 
@@ -119,7 +119,7 @@ TEST(common,context_check)
 
     id = pinpoint_start_trace(id);
     pinpoint_add_clue(id,"global",str.c_str(),E_ROOT_LOC);
-    id = pinpoint_end_trace(id);
+    id = pinpoint_end_trace(id,0);
     str.clear();
     str = "fadfaffadf";
     pinpoint_set_context_key(id,"adfadf",str.c_str());
@@ -133,16 +133,16 @@ TEST(common,context_check)
     long value ;
     EXPECT_EQ(pinpoint_get_context_long(id,"1024",&value),0);
     EXPECT_EQ(value,1024);
-    pinpoint_end_trace(id);
+    pinpoint_end_trace(id,0);
 }
 
 TEST(common,error_checking)
 {
     NodeID id = pinpoint_start_trace(0);
-    id = pinpoint_end_trace(id);
+    id = pinpoint_end_trace(id,0);
     EXPECT_EQ(id,0);
     id = pinpoint_start_trace(128);
-    pinpoint_end_trace(128);
+    pinpoint_end_trace(128,0);
     EXPECT_EQ(id,0);
 }
 
@@ -187,13 +187,13 @@ TEST(common,per_threadid)
 TEST(common,force_end_trace)
 {
     NodeID id = pinpoint_start_trace(0);
-    id = pinpoint_end_trace(id);
+    id = pinpoint_end_trace(id,0);
     id = pinpoint_start_trace(id);
     id = pinpoint_start_trace(id);
     id = pinpoint_start_trace(id);
     id = pinpoint_start_trace(id);
-    id = pinpoint_end_trace(id);
-    id = pinpoint_end_trace(id);
+    id = pinpoint_end_trace(id,0);
+    id = pinpoint_end_trace(id,0);
     EXPECT_NE(id,0);
     id = pinpoint_force_end_trace(id,300);
     EXPECT_EQ(id,0);

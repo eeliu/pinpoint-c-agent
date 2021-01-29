@@ -118,6 +118,11 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_add_id, 0, 0, 0)
     ZEND_ARG_INFO(0, nodeid)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_add_id_timeout, 0, 0, 0)
+    ZEND_ARG_INFO(0, nodeid)
+    ZEND_ARG_INFO(0, timeout)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_add_id_value, 0, 0, 1)
     ZEND_ARG_INFO(0, key)
     ZEND_ARG_INFO(0, nodeid)
@@ -135,7 +140,7 @@ ZEND_END_ARG_INFO()
  */
 const zend_function_entry pinpoint_php_functions[] = {
         PHP_FE(pinpoint_start_trace,arginfo_add_id)
-        PHP_FE(pinpoint_end_trace,arginfo_add_id)
+        PHP_FE(pinpoint_end_trace,arginfo_add_id_timeout)
         PHP_FE(pinpoint_unique_id,arginfo_none)
         PHP_FE(pinpoint_get_func_ref_args,arginfo_none)
         PHP_FE(pinpoint_drop_trace,arginfo_add_id)
@@ -366,22 +371,23 @@ PHP_FUNCTION(pinpoint_end_trace)
 {
 
     long _id = -1;
+    long timeOutMS=0;
     NodeID id = 0,cur_id = 0;
 
 #if PHP_VERSION_ID < 70000
 
-    zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &_id);
+    zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|ll", &_id,&timeOutMS);
 #else
-    zend_parse_parameters(ZEND_NUM_ARGS(), "|l", &_id);
+    zend_parse_parameters(ZEND_NUM_ARGS(), "|ll", &_id,&timeOutMS);
 #endif
     if(_id == -1){
         id = pinpoint_get_per_thread_id();
-        cur_id = pinpoint_end_trace(id);
+        cur_id = pinpoint_end_trace(id,(int)timeOutMS);
         pinpoint_update_per_thread_id(cur_id);
         RETURN_LONG((long)cur_id);
     }else{
         id = _id;
-        cur_id = pinpoint_end_trace(id);
+        cur_id = pinpoint_end_trace(id,(int)timeOutMS);
         RETURN_LONG((long)cur_id);
     }
 }

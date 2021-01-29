@@ -16,7 +16,8 @@ jobs:
           cmake-version: '3.16.x'
       - name: Build ppt-agent
         run: |
-          cd common
+          mkdir build && cd build && cmake .. && make
+          cd ../common
           mkdir -p build
           cd build
           cmake -DWITH_TEST_CASE=1 -DWITH_CODECOVERAGE=1 -DCMAKE_BUILD_TYPE=Debug  .. 

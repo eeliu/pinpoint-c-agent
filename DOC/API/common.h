@@ -131,7 +131,7 @@ NodeID pinpoint_start_trace(NodeID);
  * the same as pinpoint_start_trace. BUT, end a span or a spanevent
  * @return
  */
-NodeID pinpoint_end_trace(NodeID);
+NodeID pinpoint_end_trace(NodeID,int);
 
 
 /**

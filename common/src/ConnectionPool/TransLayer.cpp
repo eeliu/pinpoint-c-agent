@@ -121,7 +121,7 @@ ERROR:
     return -1;
 }
 
-size_t TransLayer::trans_layer_pool(uint32_t timeout)
+size_t TransLayer::trans_layer_pool(int32_t timeout)
 {
     if(c_fd  == -1 )
     {
@@ -152,8 +152,8 @@ size_t TransLayer::trans_layer_pool(uint32_t timeout)
         if(this->_state & S_WRITING){
             FD_SET(fd,&wfds);
         }
-
-        struct timeval tv = {0,(int)timeout *1000};
+        // seconds and us
+        struct timeval tv = {timeout/1000,(timeout*1000 - timeout)};
 
         int retval = select(fd+1,&rfds,&wfds,&efds,&tv);
         if(retval == -1)
@@ -162,7 +162,7 @@ size_t TransLayer::trans_layer_pool(uint32_t timeout)
            return -1;
         }else if(retval >0 ){
 
-            if((this->_state & S_READING) && FD_ISSET(fd,&rfds)){
+            if(FD_ISSET(fd,&rfds)){
                 if(_recv_msg_from_collector() == -1){
                     pp_trace("recv_msg_from_collector error");
                     goto ERROR;
@@ -185,6 +185,8 @@ size_t TransLayer::trans_layer_pool(uint32_t timeout)
            // timeout do nothing
            // total =0  ,timeout
         }
+
+        pp_trace("select return:%d socket_state:%d timeout:%d retry_count:%d ",retval,this->_state,timeout,retry_count);
 
         if( (this->_state & S_WRITING)  == 0){ // sending is done, no more retry
             break;

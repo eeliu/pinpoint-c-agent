@@ -4,7 +4,6 @@ pinpioint_php internal test case [pinpoint_test_main]
 <?php if (!extension_loaded("pinpoint_php")) print "skip"; ?>
 --INI--
 pinpoint_php.CollectorHost=unix:/unexist_file.sock
-pinpoint_php.SendSpanTimeOutMs=0
 pinpoint_php.UnitTest=true
 ;pinpoint_php._limit for internal use. User do not use it
 pinpoint_php._limit=yes

@@ -177,16 +177,15 @@ NodeID pinpoint_start_trace(NodeID _id)
     }
     return 0;
 }
-
+//@deprecated
+// pinpoint_force_end_trace could be remove in future,use `pinpoint_end_trace`
 int pinpoint_force_end_trace(NodeID id,int32_t timeout)
 {
     try
-    {   
-        _span_timeout = timeout;
+    {
         while(id != 0){
-            id = pinpoint_end_trace(id);
+            id = pinpoint_end_trace(id,timeout);
         }
-        _span_timeout = SPAN_TIMEOUT_MS;
         return 0;
     }catch(const std::out_of_range&){
         pp_trace("#%ld not found",id);
@@ -196,11 +195,11 @@ int pinpoint_force_end_trace(NodeID id,int32_t timeout)
     return -1;
 }
 
-
-NodeID pinpoint_end_trace(NodeID _id)
+NodeID pinpoint_end_trace(NodeID _id,int timeOutMs)
 {
     try
     {   
+        _span_timeout = timeOutMs;
         NodeID ret = do_end_trace(_id);
         pp_trace("#%ld pinpoint_end_trace Done!",_id);
         return ret;

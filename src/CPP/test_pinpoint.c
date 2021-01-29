@@ -67,7 +67,7 @@ void test_httpclient()
 
     random_sleep();
 
-    id = pinpoint_end_trace(id);
+    id = pinpoint_end_trace(id,0);
 }
 
 void test_mysql()
@@ -78,7 +78,7 @@ void test_mysql()
     pinpoint_add_clue(id,PP_SQL_FORMAT,"select 1*3;",E_CURRENT_LOC);
     pinpoint_add_clue(id,PP_DESTINATION,"localhost:3307",E_CURRENT_LOC);
     random_sleep();
-    id = pinpoint_end_trace(id);
+    id = pinpoint_end_trace(id,0);
 }
 
 
@@ -89,7 +89,7 @@ void test_func()
     pinpoint_add_clue(id,PP_SERVER_TYPE,PP_C_CPP_METHOD,E_CURRENT_LOC);
     pinpoint_add_clues(id,PP_PHP_ARGS,"I'm the parameters",E_CURRENT_LOC);
     random_sleep();
-    id = pinpoint_end_trace(id);
+    id = pinpoint_end_trace(id,0);
 }
 
 
@@ -114,7 +114,7 @@ void test_req()
     pinpoint_add_clue(id,PP_TRANSCATION_ID,tid,E_CURRENT_LOC);
     pinpoint_add_clue(id,PP_SPAN_ID,sid,E_CURRENT_LOC);
     pinpoint_add_clues(id,PP_HTTP_STATUS_CODE, "200",E_CURRENT_LOC);
-    id = pinpoint_end_trace(id);
+    id = pinpoint_end_trace(id,0);
     free(tid);
     free(sid);
 }

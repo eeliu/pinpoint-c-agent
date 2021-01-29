@@ -243,10 +243,10 @@ static PyObject *py_pinpoint_start_trace(PyObject *self,PyObject *args)
     return Py_BuildValue("i", ret);
 }
 
-static inline int endTraceWithPerThreadId(void)
+static inline int endTraceWithPerThreadId(int timeOutMs)
 {
     int cid = pinpoint_get_per_thread_id();
-    int id = pinpoint_end_trace(cid);
+    int id = pinpoint_end_trace(cid,timeOutMs);
     pinpoint_update_per_thread_id(id);
     return id;
 }
@@ -254,8 +254,8 @@ static inline int endTraceWithPerThreadId(void)
 static PyObject *py_pinpoint_end_trace(PyObject *self, PyObject *args)
 {
     int ret = 0;
-    int32_t id = -1;
-    if(! PyArg_ParseTuple(args,"|i",&id))
+    int32_t id = -1,timeOutMs=0;
+    if(! PyArg_ParseTuple(args,"|ii",&id,&timeOutMs))
     {
         return NULL;
     }
@@ -263,18 +263,18 @@ static PyObject *py_pinpoint_end_trace(PyObject *self, PyObject *args)
     if(global_agent_info.inter_flag & E_DISABLE_GIL)
     {
         if(id == -1){
-            ret= endTraceWithPerThreadId();
+            ret= endTraceWithPerThreadId(timeOutMs);
         }else{
-            ret = pinpoint_end_trace(id);
+            ret = pinpoint_end_trace(id,timeOutMs);
         }
     }else
     {
         Py_BEGIN_ALLOW_THREADS
 
         if(id == -1){
-            ret= endTraceWithPerThreadId();
+            ret= endTraceWithPerThreadId(timeOutMs);
         }else{
-            ret = pinpoint_end_trace(id);
+            ret = pinpoint_end_trace(id,timeOutMs);
         }
 
         Py_END_ALLOW_THREADS
@@ -443,7 +443,7 @@ static PyObject *py_pinpoint_mark_an_error(PyObject *self, PyObject *args)
 /* Module method table */
 static PyMethodDef PinpointMethods[] = {
     {"start_trace", py_pinpoint_start_trace, METH_VARARGS, "def start_trace(int id=-1):# create a new trace and insert into trace chain"},
-    {"end_trace", py_pinpoint_end_trace, METH_VARARGS, "def end_trace(int id=-1):# end currently matched trace"},
+    {"end_trace", py_pinpoint_end_trace, METH_VARARGS, "def end_trace(int id=-1,int timeoutMs=0):# end currently matched trace"},
     {"unique_id", py_generate_unique_id, METH_NOARGS, "def unique_id()-> long"},
     {"drop_trace", py_pinpoint_drop_trace, METH_VARARGS, "def drop_trace(int id=-1):# drop this trace"},
     {"start_time", py_pinpoint_start_time, METH_NOARGS, "def start_time()->long"},

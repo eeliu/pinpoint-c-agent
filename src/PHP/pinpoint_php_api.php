@@ -9,7 +9,7 @@ function pinpoint_start_trace($id=-1){}
  * pop a trace.
  * @return current stack size
  */
-function pinpoint_end_trace($id=-1){}
+function pinpoint_end_trace($id=-1,$timeout=0){}
 
 /**
  * insert key,value into current span/spanevent

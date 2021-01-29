@@ -44,7 +44,6 @@ composer| | class can be automatic pinpoint-cut
         pinpoint_php.CollectorHost=Tcp:ip:port
         ; or unix:(unix sock address)
         ;pinpoint_php.CollectorHost=unix:/tmp/collector-agent.sock
-        pinpoint_php.SendSpanTimeOutMs=0 # 0 is recommanded
         ; request should be captured duing 1 second. < 0 means no limited
         pinpoint_php.TraceLimit=-1 
         ; DEBUG the agent, PHP's log_error should turn on too.
