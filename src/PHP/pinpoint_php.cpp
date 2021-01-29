@@ -123,9 +123,12 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_add_id_value, 0, 0, 1)
     ZEND_ARG_INFO(0, nodeid)
 ZEND_END_ARG_INFO()
 
+#if PHP_VERSION_ID < 70000
+#define arginfo_none NULL
+#else
 ZEND_BEGIN_ARG_INFO(arginfo_none, 0)
 ZEND_END_ARG_INFO()
-
+#endif
 /* {{{ pinpioint_php_functions[]
  *
  * Every user visible function must have an entry in pinpioint_php_functions[].
