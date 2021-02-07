@@ -289,7 +289,7 @@ static PyObject *py_generate_unique_id(PyObject *self, CYTHON_UNUSED PyObject *u
     return Py_BuildValue("l", ret);
 }
 
-static PyObject *py_check_trace_is_root(PyObject *self, PyObject *args)
+static PyObject *py_trace_has_root(PyObject *self, PyObject *args)
 {
     int id = -1;
     if(! PyArg_ParseTuple(args,"|i",&id))
@@ -301,14 +301,15 @@ static PyObject *py_check_trace_is_root(PyObject *self, PyObject *args)
     }
 
     if(id == 0){
-         return Py_BuildValue("O",Py_True);
+         return Py_BuildValue("O",Py_False);
      }else{
+         // check the input id
          int ret = pinpoint_trace_is_root(id);
          if(ret == -1){
              PyErr_SetString(PyExc_Exception, "input traceId is not exist");
-             return NULL;
+             return Py_BuildValue("O", Py_False);;
          }
-         return Py_BuildValue("O", ret==1?( Py_True):(Py_False));
+         return Py_BuildValue("O", Py_True);
      }
 
 }
@@ -470,7 +471,7 @@ static PyMethodDef PinpointMethods[] = {
     {"start_trace", py_pinpoint_start_trace, METH_VARARGS, "def start_trace(int id=-1):# create a new trace and insert into trace chain"},
     {"end_trace", py_pinpoint_end_trace, METH_VARARGS, "def end_trace(int id=-1):# end currently matched trace"},
     {"unique_id", py_generate_unique_id, METH_NOARGS, "def unique_id()-> long"},
-    {"id_is_root", py_check_trace_is_root, METH_VARARGS, "def trace_is_root(int id=-1)-> long # check current trace is root. \n True: is root node or not start;False: not root" },
+    {"trace_has_root", py_trace_has_root, METH_VARARGS, "def trace_has_root(int id=-1)-> long # check current whether have a root. \n True: \nFalse: \n Note：If the id is invalid, return false" },
     {"drop_trace", py_pinpoint_drop_trace, METH_VARARGS, "def drop_trace(int id=-1):# drop this trace"},
     {"start_time", py_pinpoint_start_time, METH_NOARGS, "def start_time()->long"},
     {"add_clues", py_pinpoint_add_clues, METH_VARARGS, "def add_clues(string key,string value,int id=-1,int loc=0)"},
