@@ -27,7 +27,7 @@ class NextSpanPlugin(Candy):
         super().__init__(name)
         self.nsid = ''
         self.url =''
-
+    
     def onBefore(self,*args, **kwargs):
         super().onBefore(*args, **kwargs)
         self.url = args[0]

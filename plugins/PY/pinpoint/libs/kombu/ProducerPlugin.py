@@ -25,9 +25,10 @@ import pinpointPy
 class ProducerPlugin(Candy):
     def __init__(self, name):
         super().__init__(name)
-
+    
     def onBefore(self,*args, **kwargs):
         super().onBefore(*args, **kwargs)
+        print(kwargs)
         ###############################################################
         pinpointPy.add_clue(PP_INTERCEPTOR_NAME, self.getFuncUniqueName())
         pinpointPy.add_clue(PP_SERVER_TYPE, PP_RABBITMQ_CLIENT)
@@ -38,8 +39,10 @@ class ProducerPlugin(Candy):
             if kwargs['routing_key'] == 'worker.heartbeat':
                 pinpointPy.drop_trace()
             pinpointPy.add_clues(PP_RABBITMQ_ROUTINGKEY, kwargs['routing_key'])
-        target = kwargs['headers']['task']
-        generatePPRabbitMqHeader(target,kwargs['headers'])
+        
+        if 'task' in  kwargs['headers']:
+            target = kwargs['headers']['task']
+            generatePPRabbitMqHeader(target,kwargs['headers'])
 
         uri = args[0].connection.as_uri()
         pinpointPy.add_clue(PP_DESTINATION, str(uri))

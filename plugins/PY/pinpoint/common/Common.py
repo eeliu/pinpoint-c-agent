@@ -26,14 +26,33 @@ import pinpointPy
 import socket
 
 class Candy(object):
+    E_PER_REQ=1
+    E_FUNCTION = 2
+
     def __init__(self,name):
         self.name = name
+        # 2/5/2021 protect onBefore and onEnd
+        self.traced = False
+        
+    def isSample(self):
+        '''
+        if not root, drop ignore current trace
+        :return:
+        '''
+        if pinpointPy.trace_has_root():
+            return True
+        else:
+            return False
+
 
     def onBefore(self,*args, **kwargs):
         pinpointPy.start_trace()
+        self.traced = True
 
     def onEnd(self,ret):
-        pinpointPy.end_trace()
+        if self.traced:
+            pinpointPy.end_trace()
+            self.traced = False
 
     def onException(self,e):
         raise NotImplementedError()
@@ -41,16 +60,19 @@ class Candy(object):
     def __call__(self, func):
         self.func_name=func.__name__
         def pinpointTrace(*args, **kwargs):
+            if not self.isSample():
+                # print("%s dropped ..................."%(self.func_name))
+                return func(*args, **kwargs)
+
             ret = None
-            args, kwargs = self.onBefore(*args, **kwargs)
             try:
+                args, kwargs = self.onBefore(*args, **kwargs)
                 ret = func(*args, **kwargs)
                 return ret
             except Exception as e:
                 self.onException(e)
                 raise e
             finally:
-                # print("end", self.func_name)
                 self.onEnd(ret)
 
         return pinpointTrace
@@ -58,11 +80,11 @@ class Candy(object):
     def getFuncUniqueName(self):
         return self.name
 
-
 local_host_name = socket.getfqdn()
 local_ip = socket.gethostbyname(local_host_name)
 
 __all__=['local_host_name', 'Candy','local_ip']
+
 
 if __name__ == '__main__':
 
