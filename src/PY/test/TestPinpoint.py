@@ -22,8 +22,8 @@ class TestAgent(TestCase):
         self.assertTrue(pinpointPy.trace_has_root())
         pinpointPy.start_trace()
         pinpointPy.start_trace()
-        self.assertRaises(Exception,lambda: pinpointPy.trace_has_root(1025))
-        self.assertRaises(Exception,lambda: pinpointPy.trace_has_root(-1025))
+        # self.assertRaises(Exception,lambda: pinpointPy.trace_has_root(1025))
+        # self.assertRaises(Exception,lambda: pinpointPy.trace_has_root(-1025))
 
         pinpointPy.add_clue("key","value")
         pinpointPy.add_clue("key","value3")
