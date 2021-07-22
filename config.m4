@@ -22,10 +22,10 @@ if test "$PHP_PINPOINT_PHP" != "no"; then
   cmake PHP_EXT_SRCDIR()/common -DCMAKE_BUILD_TYPE=Release
   make
   cd PHP_EXT_SRCDIR()
-  PINPOINT_COMMON_LIB=PHP_EXT_SRCDIR()/common/lib
+  PINPOINT_COMMON_LIB=PHP_EXT_SRCDIR()/build/lib
   echo "----------------------------------------"
 
-  PINPOINT_PHP_SHARED_LIBADD="$PINPOINT_PHP_SHARED_LIBADD -L$PINPOINT_COMMON_LIB -l:libpinpoint_common.a -l:libjsoncpp.a -lrt"
+  PINPOINT_PHP_SHARED_LIBADD="$PINPOINT_PHP_SHARED_LIBADD -L$PINPOINT_COMMON_LIB -l:libpinpoint_common.a -lrt"
   
   PHP_NEW_EXTENSION(pinpoint_php,src/PHP/pinpoint_php.cpp, $ext_shared)
   PHP_ADD_BUILD_DIR($ext_builddir/src/PHP)

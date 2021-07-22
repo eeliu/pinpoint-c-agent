@@ -20,23 +20,65 @@
 
 PPAgentT global_agent_info;
 static PyObject *py_obj_msg_callback;
-static char* g_collector_host;
+// global g_collector_host is suck
+// static char* g_collector_host;
 
-#if PY_VERSION_HEX >= 0x30701f0
-// for pinpoint_coro_local
-#define SubObjName "agent"
+#if defined(__linux__)  || defined(_UNIX) ||defined(__APPLE__)
+#include <sys/types.h>
+#include <unistd.h>
+#include <pthread.h>
+static void _init_common_shared(void) __attribute__((constructor));
+static void _free_common_shared(void) __attribute__((destructor));
+static pthread_rwlock_t rwlock = PTHREAD_RWLOCK_INITIALIZER;
 
-typedef struct py_agent_obj {
-    PyObject_HEAD
-    void *agent; //the agent trace unit for every coroutines
-} PyAgentObj;
+static void _get_read_lock(void)
+{
+    pthread_rwlock_rdlock(&rwlock);
+}
 
-static TraceStoreLayer* get_coro_store_layer(void);
+static void _release_lock(void)
+{
+    pthread_rwlock_unlock(&rwlock);
+}
 
-static TraceStoreLayer _coro_storage;
-static PyObject* coro_local;
-#define CORO_LOCAL_NAME "pinpoint_coro_local"
+static void _get_write_lock(void)
+{
+    pthread_rwlock_wrlock(&rwlock);
+}
+
+void _init_common_shared(void)
+{
+    pthread_rwlock_init(&rwlock,NULL);
+    global_agent_info.get_read_lock  = _get_read_lock;
+    global_agent_info.get_write_lock = _get_write_lock;
+    global_agent_info.release_lock   = _release_lock;
+}
+
+void _free_common_shared(void)
+{
+    pthread_rwlock_destroy(&rwlock);
+}
+#else
+
+#error "your platform not support"
+
 #endif
+
+//#if PY_VERSION_HEX >= 0x30701f0
+//// for pinpoint_coro_local
+//#define SubObjName "agent"
+//
+// typedef struct py_agent_obj {
+//    PyObject_HEAD
+//    void *agent; //the agent trace unit for every coroutines
+// } PyAgentObj;
+//
+//static TraceStoreLayer* get_coro_store_layer(void);
+//
+//static TraceStoreLayer _coro_storage;
+//static PyObject* coro_local;
+//#define CORO_LOCAL_NAME "pinpoint_coro_local"
+//#endif
 
 #ifndef CYTHON_UNUSED
 # if defined(__GNUC__)
@@ -60,9 +102,11 @@ static PyObject *py_pinpoint_add_clues(PyObject *self, PyObject *args)
 {
     char* key = NULL;
     char* value = NULL;
-    if(PyArg_ParseTuple(args,"ss",&key,&value))
+    int id = pinpoint_get_per_thread_id(); 
+    int loc = 0;
+    if(PyArg_ParseTuple(args,"ss|ii",&key,&value,&id,&loc))
     {
-        pinpoint_add_clues(key,value);
+        pinpoint_add_clues(id,key,value,loc);
     }
     return Py_BuildValue("O",Py_True);
 }
@@ -74,9 +118,11 @@ static PyObject *py_pinpoint_add_clue(PyObject *self, PyObject *args)
 {
     char* key = NULL;
     char* value = NULL;
-    if(PyArg_ParseTuple(args,"ss",&key,&value))
+    int id = pinpoint_get_per_thread_id(); 
+    int loc = 0;
+    if(PyArg_ParseTuple(args,"ss|ii",&key,&value,&id,&loc))
     {
-       pinpoint_add_clue(key,value);
+       pinpoint_add_clue(id,key,value,loc);
     }
     return Py_BuildValue("O",Py_True);
 }
@@ -85,13 +131,14 @@ static PyObject *py_pinpoint_add_clue(PyObject *self, PyObject *args)
 /**
  * void pinpoint_set_special_key(const  char* key,const  char* value);
 */
-static PyObject *py_pinpoint_set_key(PyObject *self, PyObject *args)
+static PyObject *py_pinpoint_context_key(PyObject *self, PyObject *args)
 {
     char* key = NULL;
     char* value = NULL;
-    if(PyArg_ParseTuple(args,"ss",&key,&value))
+    int id = pinpoint_get_per_thread_id(); 
+    if(PyArg_ParseTuple(args,"ss|i",&key,&value,&id))
     {
-       pinpoint_set_special_key(key,value);
+       pinpoint_set_context_key(id,key,value);
     }
     return Py_BuildValue("O",Py_True);
 }
@@ -103,9 +150,10 @@ static PyObject *py_pinpoint_set_key(PyObject *self, PyObject *args)
 static PyObject *py_pinpoint_get_key(PyObject *self, PyObject *args)
 {
     char* key = NULL;
-    if(PyArg_ParseTuple(args,"s",&key))
+    int id = pinpoint_get_per_thread_id(); 
+    if(PyArg_ParseTuple(args,"s|i",&key,&id))
     {
-        const char* data = pinpoint_get_special_key(key);
+        const char* data = pinpoint_get_context_key(id,key);
         return Py_BuildValue("s",data);
     }
     else
@@ -138,19 +186,19 @@ static PyObject *py_check_tracelimit(PyObject *self, PyObject *args)
 static PyObject *py_force_flush_span(PyObject *self, PyObject *args)
 {
     int32_t timeout= 3;
-
-    if(! PyArg_ParseTuple(args,"|i",&timeout))
+    int id = pinpoint_get_per_thread_id(); 
+    if(! PyArg_ParseTuple(args,"|ii",&timeout,&id))
     {
         return NULL;
     }
     if(global_agent_info.inter_flag & E_DISABLE_GIL)
     {
-        pinpoint_force_flush_span(timeout);
+        pinpoint_force_end_trace(id,timeout);
     }
     else
     {
         Py_BEGIN_ALLOW_THREADS
-        pinpoint_force_flush_span(timeout);
+        pinpoint_force_end_trace(id,timeout);
         Py_END_ALLOW_THREADS
     }
 
@@ -158,33 +206,78 @@ static PyObject *py_force_flush_span(PyObject *self, PyObject *args)
 }
 
 
+static inline uint32_t  startTraceWithPerThreadId(void)
+{
+    uint32_t id = pinpoint_start_trace(pinpoint_get_per_thread_id());
+    pinpoint_update_per_thread_id(id);
+    return id;
+}
 
-static PyObject *py_pinpoint_start_trace(PyObject *self,CYTHON_UNUSED  PyObject *unused)
+
+static PyObject *py_pinpoint_start_trace(PyObject *self,PyObject *args)
 {
     int ret = 0;
+    int32_t id = -1; 
+
+    if(! PyArg_ParseTuple(args,"|i",&id))
+    {
+        return NULL;
+    }
+
     if(global_agent_info.inter_flag & E_DISABLE_GIL )
     {
-        ret = pinpoint_start_trace();
+        if(id == -1){
+            ret = startTraceWithPerThreadId();
+        }else{
+            ret = pinpoint_start_trace(id);
+        }
     }else{
         Py_BEGIN_ALLOW_THREADS
-        ret = pinpoint_start_trace();
+        if(id == -1){
+            ret = startTraceWithPerThreadId();
+        }else{
+            ret = pinpoint_start_trace(id);
+        }
         Py_END_ALLOW_THREADS
     }
 
     return Py_BuildValue("i", ret);
 }
 
+static inline int endTraceWithPerThreadId(void)
+{
+    int cid = pinpoint_get_per_thread_id();
+    int id = pinpoint_end_trace(cid);
+    pinpoint_update_per_thread_id(id);
+    return id;
+}
 
-static PyObject *py_pinpoint_end_trace(PyObject *self, CYTHON_UNUSED PyObject *unused)
+static PyObject *py_pinpoint_end_trace(PyObject *self, PyObject *args)
 {
     int ret = 0;
+    int32_t id = -1;
+    if(! PyArg_ParseTuple(args,"|i",&id))
+    {
+        return NULL;
+    }
+
     if(global_agent_info.inter_flag & E_DISABLE_GIL)
     {
-        ret = pinpoint_end_trace();
+        if(id == -1){
+            ret= endTraceWithPerThreadId();
+        }else{
+            ret = pinpoint_end_trace(id);
+        }
     }else
     {
         Py_BEGIN_ALLOW_THREADS
-        ret = pinpoint_end_trace();
+
+        if(id == -1){
+            ret= endTraceWithPerThreadId();
+        }else{
+            ret = pinpoint_end_trace(id);
+        }
+
         Py_END_ALLOW_THREADS
     }
 
@@ -197,9 +290,41 @@ static PyObject *py_generate_unique_id(PyObject *self, CYTHON_UNUSED PyObject *u
     return Py_BuildValue("l", ret);
 }
 
-static PyObject *py_pinpoint_drop_trace(PyObject *self, CYTHON_UNUSED PyObject *unused)
+static PyObject *py_trace_has_root(PyObject *self, PyObject *args)
 {
-    pinpoint_drop_trace();
+    int id = -1;
+    if(! PyArg_ParseTuple(args,"|i",&id))
+    {
+         return NULL;
+    }
+    if (id == -1){
+        id = pinpoint_get_per_thread_id();
+    }
+
+    if(id == 0){
+         return Py_BuildValue("O",Py_False);
+     }else{
+         // check the input id
+         int ret = pinpoint_trace_is_root(id);
+         if(ret == -1){
+             PyErr_SetString(PyExc_Exception, "input traceId is not exist");
+             return Py_BuildValue("O", Py_False);;
+         }
+         return Py_BuildValue("O", Py_True);
+     }
+
+}
+
+
+static PyObject *py_pinpoint_drop_trace(PyObject *self, PyObject *args)
+{
+    int id = pinpoint_get_per_thread_id();
+    if(! PyArg_ParseTuple(args,"|i",&id))
+    {
+        return NULL;
+    }
+    mark_current_trace_status(id,E_TRACE_BLOCK);
+    
     return Py_BuildValue("O",Py_True);
 }
 
@@ -223,7 +348,6 @@ static void msg_log_error_cb(char* msg)
         {
             fprintf(stderr,"%s",msg);
             PyErr_SetString(PyExc_TypeError, msg);
-            abort();
             return ;
         }
         Py_XDECREF(result); // I don't care return
@@ -258,18 +382,7 @@ bool set_collector_host(char* host)
 {
     if(strcasestr(host,"unix") || strcasestr(host,"tcp"))
     {
-        if(g_collector_host)
-        {
-            free(g_collector_host);
-            g_collector_host = NULL;
-        }
-
-        g_collector_host = strdup(host);
-        
-        // NOTE: co_host must be protected when writting
-        
-        global_agent_info.co_host = g_collector_host;
-
+        strncpy(global_agent_info.co_host,host,MAX_ADDRESS_SIZE);
         return true;
     }
     PyErr_SetString(PyExc_TypeError, "collector_host must start with unix/tcp");
@@ -283,13 +396,11 @@ static PyObject *py_set_agent(PyObject *self, PyObject *args, PyObject *keywds)
 {
     // PyObject* setting;
     bool ret = false;
-    static char *kwlist[] = {"collector_host", "trace_limit","enable_coroutines", NULL};
+    static char *kwlist[] = {"collector_host", "trace_limit", NULL};
     char* collector_host = "unix:/tmp/collector-agent.sock";
     long trace_limit = -1;
-    int enable_coro = 0;
-    if(PyArg_ParseTupleAndKeywords(args,keywds,"s|lp",kwlist,&collector_host, &trace_limit,&enable_coro))
+    if(PyArg_ParseTupleAndKeywords(args,keywds,"s|l",kwlist,&collector_host, &trace_limit))
     {
-
         global_agent_info.get_write_lock();
         ret = set_collector_host(collector_host);
         if( !ret )
@@ -298,24 +409,9 @@ static PyObject *py_set_agent(PyObject *self, PyObject *args, PyObject *keywds)
         }
 
         global_agent_info.trace_limit = trace_limit;
-
- #if PY_VERSION_HEX >= 0x30701f0
-        if(enable_coro)
-        {
-
-            // todo must hold GIL
-            pinpoint_reset_store_layer(get_coro_store_layer());
-            global_agent_info.inter_flag |= E_DISABLE_GIL ;
-            
-
-        }
-        pp_trace("enable_coro:%d",enable_coro);
-#endif
-
+        
         pp_trace("collector_host:%s",collector_host);
         pp_trace("trace_limit:%ld",trace_limit);
-
-
 
 END_OF_PARSE:
         global_agent_info.release_lock();
@@ -339,10 +435,11 @@ static PyObject *py_pinpoint_mark_an_error(PyObject *self, PyObject *args)
 {
     char * msg = NULL;
     char * file_name= NULL;
-    uint line_no= 0;
-    if(PyArg_ParseTuple(args,"ssi",&msg,&file_name,&line_no))
+    uint32_t line_no= 0;
+    int id = pinpoint_get_per_thread_id();
+    if(PyArg_ParseTuple(args,"ssi|i",&msg,&file_name,&line_no,&id))
     {
-        catch_error(msg,file_name,line_no);
+        catch_error(id,msg,file_name,line_no);
     }
 
     return Py_BuildValue("O",Py_True);
@@ -350,20 +447,21 @@ static PyObject *py_pinpoint_mark_an_error(PyObject *self, PyObject *args)
 
 /* Module method table */
 static PyMethodDef PinpointMethods[] = {
-    {"start_trace", py_pinpoint_start_trace, METH_NOARGS, "def start_trace():# create a new trace and insert into trace chain"},
-    {"end_trace", py_pinpoint_end_trace, METH_NOARGS, "def end_trace():# end currently matched trace"},
+    {"start_trace", py_pinpoint_start_trace, METH_VARARGS, "def start_trace(int id=-1):# create a new trace and insert into trace chain"},
+    {"end_trace", py_pinpoint_end_trace, METH_VARARGS, "def end_trace(int id=-1):# end currently matched trace"},
     {"unique_id", py_generate_unique_id, METH_NOARGS, "def unique_id()-> long"},
-    {"drop_trace", py_pinpoint_drop_trace, METH_NOARGS, "def drop_trace():# drop this trace"},
+    {"trace_has_root", py_trace_has_root, METH_VARARGS, "def trace_has_root(int id=-1)-> long # check current whether have a root. \n True: \nFalse: \n Note：If the id is invalid, return false" },
+    {"drop_trace", py_pinpoint_drop_trace, METH_VARARGS, "def drop_trace(int id=-1):# drop this trace"},
     {"start_time", py_pinpoint_start_time, METH_NOARGS, "def start_time()->long"},
-    {"add_clues", py_pinpoint_add_clues, METH_VARARGS, "def add_clues(string key,string value)"},
-    {"add_clue", py_pinpoint_add_clue, METH_VARARGS, "def add_clue(string key,string value)"},
-    {"set_special_key", py_pinpoint_set_key, METH_VARARGS, "def set_special_key(string key,string value): # create a key-value pair that bases on current trace chain"},
-    {"get_special_key", py_pinpoint_get_key, METH_VARARGS, "def get_special_key(key)->string "},
-    {"check_tracelimit", py_check_tracelimit, METH_VARARGS, "check_tracelimit(long timestamp): check trace whether is limit"},
-    {"enable_debug", py_pinpoint_enable_utest, METH_VARARGS, "enable logging output(callback )"},
-    {"force_flush_trace", py_force_flush_span, METH_VARARGS, "force flush span during timeout"},
-    {"mark_as_error",py_pinpoint_mark_an_error,METH_VARARGS,"def mark_as_error(string msg,string file_name,uint line_no) #This trace found an error"},
-    {"set_agent",(PyCFunction)py_set_agent, METH_VARARGS|METH_KEYWORDS, "def set_agent(collector_host=\"unix:/tmp/collector-agent.sock or tcp:host:port\",trace_limit=100,enable_coroutines=False)"},
+    {"add_clues", py_pinpoint_add_clues, METH_VARARGS, "def add_clues(string key,string value,int id=-1,int loc=0)"},
+    {"add_clue", py_pinpoint_add_clue, METH_VARARGS, "def add_clue(string key,string value,int id=-1,int loc=0)"},
+    {"set_context_key", py_pinpoint_context_key, METH_VARARGS, "def set_context_key(string key,string value,int id=-1): # create a key-value pair that bases on current trace chain"},
+    {"get_context_key", py_pinpoint_get_key, METH_VARARGS, "def get_context_key(string key,int id=-1)->string "},
+    {"check_tracelimit", py_check_tracelimit, METH_VARARGS, "def check_tracelimit(long timestamp=-1): #check trace whether is limit"},
+    {"enable_debug", py_pinpoint_enable_utest, METH_VARARGS, "def enable_debug(callback):#enable logging output(callback )"},
+    {"force_flush_trace", py_force_flush_span, METH_VARARGS, "def force_flush_trace(timeout=3,int id=-1): #force flush span during timeout"},
+    {"mark_as_error",py_pinpoint_mark_an_error,METH_VARARGS,"def mark_as_error(string msg,string file_name,uint line_no,int id=-1): #Found an error in this trace"},
+    {"set_agent",(PyCFunction)py_set_agent, METH_VARARGS|METH_KEYWORDS, "def set_agent(collector_host=\"unix:/tmp/collector-agent.sock or tcp:host:port\",trace_limit=-1): # set pinpint collector information"},
     { NULL, NULL, 0, NULL}
 };
 
@@ -372,16 +470,12 @@ static PyMethodDef PinpointMethods[] = {
 static void free_pinpoint_module(void * module)
 {
     Py_XDECREF(py_obj_msg_callback);
-    if (g_collector_host)
-    {
-        free(g_collector_host);
-    }
-#if PY_VERSION_HEX >= 0x30701f0
-    if(coro_local)
-    {
-        Py_DECREF(coro_local);
-    }
-#endif
+// #if PY_VERSION_HEX >= 0x30701f0
+//     if(coro_local)
+//     {
+//         Py_DECREF(coro_local);
+//     }
+// #endif
     if(py_obj_msg_callback)
     {
         Py_DECREF(py_obj_msg_callback);
@@ -406,108 +500,108 @@ static struct PyModuleDef pinpointPymodule = {
 
 #if PY_VERSION_HEX >= 0x30701f0
 
-static PyObject *Agent_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
-    PyAgentObj *self;
-    self = (PyAgentObj*)type->tp_alloc(type, 0);
-    if (self != NULL) {
-        self->agent = NULL;
-    }
-    return (PyObject*)self;
-}
+// static PyObject *Agent_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+//     PyAgentObj *self;
+//     self = (PyAgentObj*)type->tp_alloc(type, 0);
+//     if (self != NULL) {
+//         self->agent = NULL;
+//     }
+//     return (PyObject*)self;
+// }
 
-static void Agent_dealloc(PyAgentObj *self) {
-    give_back_agent(self->agent);
-    Py_TYPE(self)->tp_free((PyObject*)self);
-}
+// static void Agent_dealloc(PyAgentObj *self) {
+//     give_back_agent(self->agent);
+//     Py_TYPE(self)->tp_free((PyObject*)self);
+// }
 
-static PyTypeObject Agent_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "pinpointPy."SubObjName, /* tp_name */
-    sizeof(PyAgentObj),         /* tp_basicsize */
-    0,                         /* tp_itemsize */
-    (destructor)Agent_dealloc,   /* tp_dealloc */
-    0,                         /* tp_print */
-    0,                         /* tp_getattr */
-    0,                         /* tp_setattr */
-    0,                         /* tp_compare */
-    0,                         /* tp_repr */
-    0,                         /* tp_as_number */
-    0,                         /* tp_as_sequence */
-    0,                         /* tp_as_mapping */
-    0,                         /* tp_hash */
-    0,                         /* tp_call */
-    0,                         /* tp_str */
-    0,                         /* tp_getattro */
-    0,                         /* tp_setattro */
-    0,                         /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT |
-        Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    SubObjName" objects",  /* tp_doc */
-    0,                         /* tp_traverse */
-    0,                         /* tp_clear */
-    0,                         /* tp_richcompare */
-    0,                         /* tp_weaklistoffset */
-    0,                         /* tp_iter */
-    0,                         /* tp_iternext */
-    0,                         /* tp_methods */
-    0,                         /* tp_members */
-    0,               /* tp_getset Agent_getsets */
-    0,                         /* tp_base */
-    0,                         /* tp_dict */
-    0,                         /* tp_descr_get */
-    0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
-    0,                         /* tp_init */
-    0,                         /* tp_alloc */
-    Agent_new,                   /* tp_new */
-};
+// static PyTypeObject Agent_Type = {
+//     PyVarObject_HEAD_INIT(NULL, 0)
+//     "pinpointPy."SubObjName, /* tp_name */
+//     sizeof(PyAgentObj),         /* tp_basicsize */
+//     0,                         /* tp_itemsize */
+//     (destructor)Agent_dealloc,   /* tp_dealloc */
+//     0,                         /* tp_print */
+//     0,                         /* tp_getattr */
+//     0,                         /* tp_setattr */
+//     0,                         /* tp_compare */
+//     0,                         /* tp_repr */
+//     0,                         /* tp_as_number */
+//     0,                         /* tp_as_sequence */
+//     0,                         /* tp_as_mapping */
+//     0,                         /* tp_hash */
+//     0,                         /* tp_call */
+//     0,                         /* tp_str */
+//     0,                         /* tp_getattro */
+//     0,                         /* tp_setattro */
+//     0,                         /* tp_as_buffer */
+//     Py_TPFLAGS_DEFAULT |
+//         Py_TPFLAGS_BASETYPE,   /* tp_flags */
+//     SubObjName" objects",  /* tp_doc */
+//     0,                         /* tp_traverse */
+//     0,                         /* tp_clear */
+//     0,                         /* tp_richcompare */
+//     0,                         /* tp_weaklistoffset */
+//     0,                         /* tp_iter */
+//     0,                         /* tp_iternext */
+//     0,                         /* tp_methods */
+//     0,                         /* tp_members */
+//     0,               /* tp_getset Agent_getsets */
+//     0,                         /* tp_base */
+//     0,                         /* tp_dict */
+//     0,                         /* tp_descr_get */
+//     0,                         /* tp_descr_set */
+//     0,                         /* tp_dictoffset */
+//     0,                         /* tp_init */
+//     0,                         /* tp_alloc */
+//     Agent_new,                   /* tp_new */
+// };
 
-static void set_coro_local(void* agent)
-{
-    PyObject *pp_agent_obj = PyObject_CallObject((PyObject *) &Agent_Type,NULL);
-    assert(pp_agent_obj);
-    ((PyAgentObj*)pp_agent_obj)->agent = agent;
-    pp_trace("new  agent obj:%p",pp_agent_obj);
-    PyObject *tok = PyContextVar_Set(coro_local, pp_agent_obj);
-    if(tok == NULL ){
-        Py_DECREF(pp_agent_obj);
-        return;
-    }
-    Py_DECREF(tok);
-    Py_DECREF(pp_agent_obj);
-    pp_trace("set agent:%p success",agent);
-}
+//static void set_coro_local(void* agent)
+//{
+//    PyObject *pp_agent_obj = PyObject_CallObject((PyObject *) &Agent_Type,NULL);
+//    assert(pp_agent_obj);
+//    ((PyAgentObj*)pp_agent_obj)->agent = agent;
+//    pp_trace("new  agent obj:%p",pp_agent_obj);
+//    PyObject *tok = PyContextVar_Set(coro_local, pp_agent_obj);
+//    if(tok == NULL ){
+//        Py_DECREF(pp_agent_obj);
+//        return;
+//    }
+//    Py_DECREF(tok);
+//    Py_DECREF(pp_agent_obj);
+//    pp_trace("set agent:%p success",agent);
+//}
+//
+//static void* get_coro_local(void)
+//{
+//    PyObject *pp_agent_obj;
+//    if(PyContextVar_Get(coro_local,NULL,&pp_agent_obj)<0){
+//        pp_trace("get coro local failed");
+//        return NULL;
+//    }
+//
+//    if (pp_agent_obj != NULL) {
+//        pp_trace("get_coro_local:%p",((PyAgentObj*)pp_agent_obj)->agent);
+//        Py_DECREF(pp_agent_obj);
+//        return ((PyAgentObj*)pp_agent_obj)->agent;
+//    }
+//    pp_trace("why agent is NULL");
+//    return NULL;
+//}
 
-static void* get_coro_local(void)
-{
-    PyObject *pp_agent_obj;
-    if(PyContextVar_Get(coro_local,NULL,&pp_agent_obj)<0){
-        pp_trace("get coro local failed");
-        return NULL;
-    }
+// TraceStoreLayer* get_coro_store_layer(void)
+// {
 
-    if (pp_agent_obj != NULL) {
-        pp_trace("get_coro_local:%p",((PyAgentObj*)pp_agent_obj)->agent);
-        Py_DECREF(pp_agent_obj);
-        return ((PyAgentObj*)pp_agent_obj)->agent;
-    }
-    pp_trace("why agent is NULL");
-    return NULL;
-}
+//     if(coro_local == NULL)
+//     {
+//         coro_local = PyContextVar_New(CORO_LOCAL_NAME, NULL);
+//     }
 
-TraceStoreLayer* get_coro_store_layer(void)
-{
+//     _coro_storage.get_cur_trace_cb = get_coro_local;
+//     _coro_storage.set_cur_trace_cb = set_coro_local;
 
-    if(coro_local == NULL)
-    {
-        coro_local = PyContextVar_New(CORO_LOCAL_NAME, NULL);
-    }
-
-    _coro_storage.get_cur_trace_cb = get_coro_local;
-    _coro_storage.set_cur_trace_cb = set_coro_local;
-
-    return &_coro_storage;
-}
+//     return &_coro_storage;
+// }
 
 #endif
 
@@ -520,33 +614,30 @@ PyMODINIT_FUNC
 PyInit_pinpointPy(void) {
     
     global_agent_info.agent_type=1700;
-    global_agent_info.co_host = "unix:/tmp/collector.sock";
+    strncpy(global_agent_info.co_host ,"unix:/tmp/collector.sock",MAX_ADDRESS_SIZE);
     global_agent_info.inter_flag = 0;
     global_agent_info.timeout_ms = 0;
     global_agent_info.trace_limit = -1;
     register_error_cb(NULL);
 
-
-
     PyObject* m = PyModule_Create(&pinpointPymodule);
-     if (m == NULL)
-        return NULL;
+     if (m == NULL) return NULL;
 
     // register Agent_Type
-#if PY_VERSION_HEX >= 0x30701f0
-    if (PyType_Ready(&Agent_Type) < 0)
-    {
-        return NULL;
-    }
+// #if PY_VERSION_HEX >= 0x30701f0
+//     if (PyType_Ready(&Agent_Type) < 0)
+//     {
+//         return NULL;
+//     }
 
-    Py_INCREF(&Agent_Type);
-    if (PyModule_AddObject(m, SubObjName, (PyObject*)&Agent_Type) <0)
-    {
-        Py_DECREF(&Agent_Type);
-        Py_DECREF(m);
-        return NULL;
-    }
-#endif
+//     Py_INCREF(&Agent_Type);
+//     if (PyModule_AddObject(m, SubObjName, (PyObject*)&Agent_Type) <0)
+//     {
+//         Py_DECREF(&Agent_Type);
+//         Py_DECREF(m);
+//         return NULL;
+//     }
+// #endif
 
     return m;
 }
@@ -567,10 +658,11 @@ initpinpointPy(void)
         return;
 
     global_agent_info.agent_type=1700;
-    global_agent_info.co_host = "unix:/tmp/collector.sock";
+    strncpy(global_agent_info.co_host ,"unix:/tmp/collector.sock",MAX_ADDRESS_SIZE);
     global_agent_info.inter_flag = 0;
     global_agent_info.timeout_ms = 0;
     global_agent_info.trace_limit = -1;
+
     register_error_cb(NULL);
 
 }

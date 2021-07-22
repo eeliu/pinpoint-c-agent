@@ -1,85 +1,60 @@
-﻿## Getting Started
+﻿## Support Plan
+What we have supported and what we are going to support: [support plan](SupportPlan.md)
+
+## Getting Started
 
 ### Requirement
 
-Dependency| Version
----|----
-python |python 3.5+
-python async|python 3.7.1+
-gcc|gcc 4.7+
-cmake| 3.0+
-*inux| 
-pinpoint| 2.0+(GRPC)
+Dependency| Version| More
+---|----|---
+python |2.7,3+ | (async must 3.7.1+)
+GO | | 
+gcc|gcc 4.7+| c++11
+cmake| 3.1+| ✔
+*inux|  | `windows` is on the way
+pinpoint| 2.0+(GRPC)|
 
 ### Installation
 
-#### Build pinpointPy module
+#### pinpointPy 
 
-1. Install python virtual environment,refer to 
-https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/
-
-2. Come back to the root directory, install pinpointPy (Python virtual environment is recommended).
 ```shell
-$ python setup.py install
+$ pip install pinpointPy
 ```
-#### Build Collector-agent
-1. Goto collector-agent
-2. python3 -m venv env
-3. source env/bin/activate
-4. pip3 install -r requirements.txt
-5. Change configuration file in conf/collector.conf
+### Download pinpoint-python-plugins
 
-    ```ini
-    [Collector]
-    AgentID=dev
-    ApplicationName=dev-app
- 
-    # pinpoint-collector host and specific port
-    ### For thrift pinpoint 1.8.0-RC1+
-    #CollectorSpanIp=collectorHost
-    #CollectorSpanPort=9905
-    #CollectorStatIp=collectorHost
-    #CollectorStatPort=9906
-    #CollectorTcpIp=collectorHost
-    #CollectorTcpPort=9907
- 
-    ### For GRPC pinpoint 2.0+
-    AgentID=your_id
-    ApplicationName=your_name
-    collector.grpc.agent.ip=collectorHost
-    collector.grpc.agent.port=9991
-    collector.grpc.stat.ip=collectorHost
-    collector.grpc.stat.port=9992
-    collector.grpc.span.ip=collectorHost
-    collector.grpc.span.port=9993
- 
-    [Common]
-    # your web server (nginx&apache) port
-    Web_Port=8001   
-    # debug in dev
-    Log_Level=ERROR 
-    # make sure LOG_DIR is exist
-    # The real-time log of collector-agent can be checked under this path with the command " tail -f ".
-    LOG_DIR=/your log dir/ 
-    [Agent]
-    # the same as below "pinpoint_php.CollectorHost"
-    # sock address
-    Address=/tmp/collector-agent.sock
-    # or TCP address
-    #Address=ip@port
+[pinpoint-python-plugins.tar.gz](https://github.com/pinpoint-apm/pinpoint-c-agent/releases/download/v0.4.0/pinpoint-py-v0.4.0.zip)
+
+#### Install Collector Agent
+`Collector-Agent`, who formats the span from PHP/Python/C/CPP-Agent and send to `Pinpoint-Collector`, is an agent written by [golang](https://golang.google.cn/).Please install golang before the following steps.[Install GO](https://golang.google.cn/doc/install)
+
+1. Goto collector-agent(`pinpoint-c-agent/collector-agent`)
+2. Execute command `go build`
+3. Add environment variables:
     ```
-6. export COLLECTOR_CONFIG=/full path of collector.conf/
-7. run collector-agent
+    export PP_COLLECTOR_AGENT_SPAN_IP=dev-pinpoint
+    export PP_COLLECTOR_AGENT_SPAN_PORT=9993
+    export PP_COLLECTOR_AGENT_AGENT_IP=dev-pinpoint
+    export PP_COLLECTOR_AGENT_AGENT_PORT=9991
+    export PP_COLLECTOR_AGENT_STAT_IP=dev-pinpoint
+    export PP_COLLECTOR_AGENT_STAT_PORT=9992
+    export PP_COLLECTOR_AGENT_ISDOCKER=false
+    export PP_LOG_DIR=/tmp/
+    export PP_Log_Level=INFO
+    export PP_ADDRESS=0.0.0.0@9999
     ```
-    $ ./init_python_env.sh
-    $ python run.py 
-    ```
+    1. `PP_COLLECTOR_AGENT_SPAN_IP`, `PP_COLLECTOR_AGENT_AGENT_IP`, `PP_COLLECTOR_AGENT_STAT_IP`: Set the IP of pinpoint-collector.
+    2. `PP_COLLECTOR_AGENT_SPAN_PORT`, `PP_COLLECTOR_AGENT_AGENT_PORT`, `PP_COLLECTOR_AGENT_STAT_PORT`: Set the port of pinpoint-collector(grpc).
+    3. `PP_LOG_DIR`: Set the path of Collector-Agent's log file.
+    4. `PP_Log_Level`: Set the log level.
+    5. `PP_ADDRESS`: Set the address of `Collector-Agent`, then `PHP/Python-Agent` will connect Collector-Agent through this address.
+4. Run `Collector-Agent` by executing command `./CollectorAgent`
+   
+  Collector Agent Span Specification
+  [Json string map to Pinpoint item](../API/collector-agent/Readme.md)
 
-### [How To Use]
-[Click me ☚](../../Example/PY/Readme.md)
-
-
-## Changes
+### [How to Use]
+[Click me ☚](../../plugins/PY/Readme.md)
 
 
 ## Performance Test Result
@@ -96,5 +71,5 @@ pure|4.440|450.44
 -|4.425|451.96
 Result|+0.05ms|-1%
 
-> TPR:Time per request         
-> RPS:Requests per second
+> TPR: time per request         
+> RPS: requests per second

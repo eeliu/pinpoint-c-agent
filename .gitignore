@@ -1,6 +1,7 @@
 .vscode
 .idea
 *.o
+*.lo
 *.result
 *.a
 *.la
@@ -31,4 +32,5 @@ dist
 .deps
 temp
 vendor
-Cache
+Example/*/Cache/*
+CollectorAgentDocker/env.list

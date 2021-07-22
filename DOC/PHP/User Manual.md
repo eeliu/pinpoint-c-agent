@@ -1,11 +1,6 @@
-﻿
-> Contents
+﻿## 1 How does pinpoint-php agent work?
 
-[toc]
-
-## 1 How does pinpoint-php agent work?
-
-Pinpoint php agent employs [php_simple_aop](https://github.com/eeliu/php_simple_aop) as its aspect programming library, and it helps to convert origin class.php to proxied_class.php which includes plugins.php and origin.php without affecting any function of origin class.php.
+Pinpoint-php agent employs [pinpoint-php-aop](https://github.com/pinpoint-apm/pinpoint-php-aop) as its aspect programming library, and it helps to convert origin class.php to proxied_class.php which includes plugins.php and origin.php without affecting any function of origin class.php.
 
 ``` php
 +--------------+                    +-----------------------+
@@ -29,9 +24,10 @@ Pinpoint php agent employs [php_simple_aop](https://github.com/eeliu/php_simple_
 ![FlarumPerformanceTest](../images/FlarumPerformanceTest.png)
 
 > TPS: time per request 
+
 > TPR: requests per second
 
-[How to use pinpoint-php into Flarum?](/Example/PHP/demo/Flarum-demo/Reademe.md)
+[How to use pinpoint-php agent into Flarum?](https://github.com/eeliu/pinpoint-in-laravel)
 
 >  Call Tree
 
@@ -55,20 +51,20 @@ class Foo{
 
 ```
 
-> As foo returns a new object and this scenario can't be detected by php_simple_aop easily.
+> As foo returns a new object and this scenario can't be detected by pinpoint-php-aop easily.
 
 ### 2.1 Use a decorator
 
 Replace the return object with a decorated object in onEnd(). There are some [magic methods](https://www.php.net/manual/en/language.oop5.magic.php) to help "hacking" the object.
 
-[ [How does it work? ☚]](../../Example/PHP/Plugins/InstancePlugins.php)
+[ [How does it work? ☚]](../../plugins/PHP/Plugins/Common/InstancePlugins.php)
 
 
 ### 2.2 Examples
 
 #### 2.2.1 Hook a generator.
 
-> https://github.com/naver/pinpoint-c-agent/issues/100
+> https://github.com/pinpoint-apm/pinpoint-c-agent/issues/100
 
 ``` php
     ...
@@ -87,7 +83,7 @@ Replace the return object with a decorated object in onEnd(). There are some [ma
     }
     ...
 ```
-[ [Goto GeneratorPlugin ☚] ](../../Example/PHP/Plugins/GeneratorPlugin.php)
+[ [Goto GeneratorPlugin ☚] ](../../plugins/PHP/Plugins/AutoGen/app/GeneratorPlugin.php)
 
 #### 2.2.2 PDO::prepare return a PDOStatement
 
@@ -106,5 +102,5 @@ $yellow = $sth->fetchAll();
 
 ```
 
-Replace $dbh->prepare return value with [Plugins\PDOStatement](../../Example/PHP/Plugins/PDOStatement.php).
+Replace $dbh->prepare return value with [ProfilerPDOStatement](../../plugins/PHP/Plugins/Sys/PDO/ProfilerPDOStatement.php).
 

@@ -15,21 +15,31 @@ class TestAgent(TestCase):
         self.assertTrue(pinpointPy.set_agent(collector_host='unix:/tmp/collector-agent.sock'))
 
     def test_trace_life(self):
-        self.assertEqual(pinpointPy.start_trace(),1)
-        self.assertEqual(pinpointPy.start_trace(),2)
-        self.assertEqual(pinpointPy.start_trace(),3)
-        self.assertEqual(pinpointPy.start_trace(),4)
+        self.assertFalse(pinpointPy.trace_has_root())
+        pinpointPy.start_trace()
+        self.assertTrue(pinpointPy.trace_has_root())
+        pinpointPy.start_trace()
+        self.assertTrue(pinpointPy.trace_has_root())
+        pinpointPy.start_trace()
+        pinpointPy.start_trace()
+        # self.assertRaises(Exception,lambda: pinpointPy.trace_has_root(1025))
+        # self.assertRaises(Exception,lambda: pinpointPy.trace_has_root(-1025))
+
         pinpointPy.add_clue("key","value")
         pinpointPy.add_clue("key","value3")
-
+        pinpointPy.set_context_key('sid','12345')
+        value = pinpointPy.get_context_key('sid')
+        self.assertEqual(value,'12345')
         pinpointPy.add_clues("key","values")
         pinpointPy.add_clues("key","values")
         pinpointPy.add_clues("key","values")
 
-        self.assertEqual(pinpointPy.end_trace(),3)
-        self.assertEqual(pinpointPy.end_trace(),2)
-        self.assertEqual(pinpointPy.end_trace(),1)
-        self.assertEqual(pinpointPy.end_trace(),0)
+        pinpointPy.end_trace()
+        pinpointPy.end_trace()
+        pinpointPy.end_trace()
+        pinpointPy.end_trace()
+        pinpointPy.force_flush_trace(10)
+        self.assertFalse(pinpointPy.trace_has_root())
 
     def test_set_collector_host(self):
         self.assertTrue(pinpointPy.set_agent(collector_host='unix:/tmp/collector1.sock'))
