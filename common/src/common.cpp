@@ -108,7 +108,7 @@ static void flush_to_agent(std::string& span)
         trans->sendMsgToAgent(span);
     }
     else{
-        pp_trace("drop current span as it's too heavy! size:%d",span.length());
+        pp_trace("drop current span as it's too heavy! size:%lu",span.length());
     }
     trans->trans_layer_pool(_span_timeout);
     Helper::freeConnection(trans);
@@ -131,9 +131,9 @@ NodeID do_end_trace(TraceNode& node)
             flush_to_agent(spanStr);
 
         }else if( node.limit == E_TRACE_BLOCK ){
-            pp_trace("current#%ld span dropped,due to TRACE_BLOCK",node.getId());
+            pp_trace("current#%d span dropped,due to TRACE_BLOCK",node.getId());
         }else{
-            pp_trace("current#%ld span dropped,due to limit=%d",node.getId(),node.limit);
+            pp_trace("current#%d span dropped,due to limit=%ld",node.getId(),node.limit);
         }
         /// this span is done, reset the trace node tree
         free_nodes_tree(&node);
@@ -161,19 +161,19 @@ NodeID pinpoint_start_trace(NodeID _id)
 {
     try
     {
-        pp_trace("#%ld pinpoint_start start",_id);
+        pp_trace("#%d pinpoint_start start",_id);
         return do_start_trace(_id);
     }
     catch(const std::out_of_range& ex)
     {
-        pp_trace(" start_trace#%ld failed with %s",_id,ex.what());
+        pp_trace(" start_trace#%d failed with %s",_id,ex.what());
     }
     catch(const std::runtime_error& ex)
     {
-        pp_trace(" start_trace#%ld failed with %s",_id,ex.what());
+        pp_trace(" start_trace#%d failed with %s",_id,ex.what());
     }catch(...)
     {
-        pp_trace(" start_trace#%ld failed with unkonw reason",_id);
+        pp_trace(" start_trace#%d failed with unkonw reason",_id);
     }
     return 0;
 }
@@ -189,9 +189,9 @@ int pinpoint_force_end_trace(NodeID id,int32_t timeout)
         _span_timeout = SPAN_TIMEOUT_MS;
         return 0;
     }catch(const std::out_of_range&){
-        pp_trace("#%ld not found",id);
+        pp_trace("#%d not found",id);
     }catch(const std::exception &ex){
-        pp_trace("#%ld end trace failed. %s",id,ex.what());
+        pp_trace("#%d end trace failed. %s",id,ex.what());
     }
     return -1;
 }
@@ -203,10 +203,10 @@ int pinpoint_trace_is_root(NodeID _id)
         TraceNode&  node = g_node_pool.getNodeById(_id);
         return node.isRoot()?(1):(0);
     }catch(const std::out_of_range&){
-        pp_trace("#%ld not found",_id);
+        pp_trace("#%d not found",_id);
         return -1;
     }catch(const std::exception &ex){
-        pp_trace("#%ld end trace failed. %s",_id,ex.what());
+        pp_trace("#%d end trace failed. %s",_id,ex.what());
         return -1;
     }
 }
@@ -216,13 +216,13 @@ NodeID pinpoint_end_trace(NodeID _id)
     try
     {   
         NodeID ret = do_end_trace(_id);
-        pp_trace("#%ld pinpoint_end_trace Done!",_id);
+        pp_trace("#%d pinpoint_end_trace Done!",_id);
         return ret;
     }catch(const std::out_of_range&){
-        pp_trace("#%ld not found",_id);
+        pp_trace("#%d not found",_id);
         return 0;
     }catch(const std::exception &ex){
-        pp_trace("#%ld end trace failed. %s",_id,ex.what());
+        pp_trace("#%d end trace failed. %s",_id,ex.what());
         return 0;
     }
 }
@@ -249,7 +249,7 @@ bool do_mark_current_trace_status(NodeID& _id,E_AGENT_STATUS status)
     TraceNode& node = g_node_pool.getNodeById(_id);
     assert(node.p_root_node);
     TraceNode* root = node.p_root_node;
-    pp_trace("change current#%ld status, before:%d,now:%d",root->getId(),root->limit,status);
+    pp_trace("change current#%d status, before:%lld,now:%d",root->getId(),root->limit,status);
     root->limit = status;
     return true;
 }
@@ -262,14 +262,14 @@ int mark_current_trace_status(NodeID _id,int status)
     }
     catch(const std::out_of_range& ex)
     {
-        pp_trace(" %s#%ld failed with %s",__func__,_id,ex.what());
+        pp_trace(" %s#%d failed with %s",__func__,_id,ex.what());
     }
     catch(const std::runtime_error& ex)
     {
-        pp_trace(" %s#%ld failed with %s",__func__,_id,ex.what());
+        pp_trace(" %s#%d failed with %s",__func__,_id,ex.what());
     }catch(...)
     {
-        pp_trace(" %s#%ld failed with unkonw reason",__func__,_id);
+        pp_trace(" %s#%d failed with unkonw reason",__func__,_id);
     }
     return 1;
 }
@@ -296,7 +296,7 @@ static void do_add_clue(NodeID _id,const  char* key,const  char* value,E_NODE_LO
 {
     TraceNode& node = parse_flag(_id,flag);
     node[key]=value;
-    pp_trace("#%ld add clue key:%s value:%s",_id,key,value);
+    pp_trace("#%d add clue key:%s value:%s",_id,key,value);
 }
 
 static void do_add_clues(NodeID _id,const  char* key,const  char* value,E_NODE_LOC flag)
@@ -307,7 +307,7 @@ static void do_add_clues(NodeID _id,const  char* key,const  char* value,E_NODE_L
     cvalue+=':';
     cvalue+=value;
     node[CLUSE].append(cvalue);
-    pp_trace("#%ld add clues:%s:%s",_id,key,value);
+    pp_trace("#%d add clues:%s:%s",_id,key,value);
 }
 
 void pinpoint_add_clues(NodeID _id,const  char* key,const  char* value,E_NODE_LOC flag)
@@ -318,14 +318,14 @@ void pinpoint_add_clues(NodeID _id,const  char* key,const  char* value,E_NODE_LO
     }
     catch(const std::out_of_range& ex)
     {
-        pp_trace(" %s#%ld failed.Reason %s,parameters:%s:%s",__func__,_id,ex.what(),key,value);
+        pp_trace(" %s#%d failed.Reason %s,parameters:%s:%s",__func__,_id,ex.what(),key,value);
     }
     catch(const std::runtime_error& ex)
     {
-        pp_trace(" %s#%ld failed.Reason %s,parameters:%s:%s",__func__,_id,ex.what(),key,value);
+        pp_trace(" %s#%d failed.Reason %s,parameters:%s:%s",__func__,_id,ex.what(),key,value);
     }catch(...)
     {
-        pp_trace(" %s#%ld failed.Reason: unknown reason,parameters:%s:%s",__func__,_id,key,value);
+        pp_trace(" %s#%d failed.Reason: unknown reason,parameters:%s:%s",__func__,_id,key,value);
     }
 }
 
@@ -337,14 +337,14 @@ void pinpoint_add_clue(NodeID _id,const  char* key,const  char* value,E_NODE_LOC
     }
     catch(const std::out_of_range& ex)
     {
-        pp_trace(" %s#%ld failed. Reason: %s,parameters:%s:%s",__func__,_id,ex.what(),key,value);
+        pp_trace(" %s#%d failed. Reason: %s,parameters:%s:%s",__func__,_id,ex.what(),key,value);
     }
     catch(const std::runtime_error& ex)
     {
-        pp_trace(" %s#%ld failed. Reason: %s,parameters:%s:%s",__func__,_id,ex.what(),key,value);
+        pp_trace(" %s#%d failed. Reason: %s,parameters:%s:%s",__func__,_id,ex.what(),key,value);
     }catch(...)
     {
-        pp_trace(" %s#%ld failed. Reason: unknow reason,parameters:%s:%s",__func__,_id,key,value);
+        pp_trace(" %s#%d failed. Reason: unknow reason,parameters:%s:%s",__func__,_id,key,value);
     }
 }
 
@@ -371,14 +371,14 @@ void pinpoint_set_context_key(NodeID _id,const char* key,const char* value)
     }
     catch(const std::out_of_range& ex)
     {
-        pp_trace(" %s#%ld failed with out_of_range. %s,parameters:%s:%s",__func__,_id,ex.what(),key,value);
+        pp_trace(" %s#%d failed with out_of_range. %s,parameters:%s:%s",__func__,_id,ex.what(),key,value);
     }
     catch(const std::runtime_error& ex)
     {
-        pp_trace(" %s#%ld failed with runtime_error. %s,parameters:%s:%s",__func__,_id,ex.what(),key,value);
+        pp_trace(" %s#%d failed with runtime_error. %s,parameters:%s:%s",__func__,_id,ex.what(),key,value);
     }catch(const std::exception&ex)
     {
-        pp_trace(" %s#%ld failed with %s,parameters:%s:%s",__func__,_id,ex.what(),key,value);
+        pp_trace(" %s#%d failed with %s,parameters:%s:%s",__func__,_id,ex.what(),key,value);
     }
 }
 
@@ -397,14 +397,14 @@ void pinpoint_set_context_long(NodeID _id,const char* key,long l)
     }
     catch(const std::out_of_range& ex)
     {
-        pp_trace(" %s#%ld failed with %s",__func__,_id,ex.what());
+        pp_trace(" %s#%d failed with %s",__func__,_id,ex.what());
     }
     catch(const std::runtime_error& ex)
     {
-        pp_trace(" %s#%ld failed with %s",__func__,_id,ex.what());
+        pp_trace(" %s#%d failed with %s",__func__,_id,ex.what());
     }catch(const std::exception&ex)
     {
-        pp_trace(" %s#%ld failed with %s",__func__,_id,ex.what());
+        pp_trace(" %s#%d failed with %s",__func__,_id,ex.what());
     }
 }
 
@@ -426,14 +426,14 @@ int pinpoint_get_context_long(NodeID _id,const char* key,long* l)
     }
     catch(const std::out_of_range& ex)
     {
-        pp_trace(" %s#%ld failed with %s",__func__,_id,ex.what());
+        pp_trace(" %s#%d failed with %s",__func__,_id,ex.what());
     }
     catch(const std::runtime_error& ex)
     {
-        pp_trace(" %s#%ld failed with %s",__func__,_id,ex.what());
+        pp_trace(" %s#%d failed with %s",__func__,_id,ex.what());
     }catch(const std::exception&ex)
     {
-        pp_trace(" %s#%ld failed with %s",__func__,_id,ex.what());
+        pp_trace(" %s#%d failed with %s",__func__,_id,ex.what());
     }
     return 1;
 }
@@ -446,14 +446,14 @@ const char* pinpoint_get_context_key(NodeID _id,const char* key)
     }
     catch(const std::out_of_range& ex)
     {
-        pp_trace(" %s#%ld failed with %s, parameters:%s",__func__,_id,ex.what(),key);
+        pp_trace(" %s#%d failed with %s, parameters:%s",__func__,_id,ex.what(),key);
     }
     catch(const std::runtime_error& ex)
     {
-        pp_trace(" %s#%ld failed with %s, parameters:%s",__func__,_id,ex.what(),key);
+        pp_trace(" %s#%d failed with %s, parameters:%s",__func__,_id,ex.what(),key);
     }catch(const std::exception&ex)
     {
-        pp_trace(" %s#%ld failed with %s, parameters:%s",__func__,_id,ex.what(),key);
+        pp_trace(" %s#%d failed with %s, parameters:%s",__func__,_id,ex.what(),key);
     }
     return nullptr;
 }
@@ -479,13 +479,13 @@ void catch_error(NodeID _id,const char* msg,const char* error_filename,uint32_t 
     }
     catch(const std::out_of_range& ex)
     {
-        pp_trace(" %s#%ld failed with %s",__func__,_id,ex.what());
+        pp_trace(" %s#%d failed with %s",__func__,_id,ex.what());
     }
     catch(const std::runtime_error& ex)
     {
-        pp_trace(" %s#%ld failed with %s",__func__,_id,ex.what());
+        pp_trace(" %s#%d failed with %s",__func__,_id,ex.what());
     }catch(const std::exception& ex)
     {
-        pp_trace(" %s#%ld failed with %s",__func__,_id,ex.what());
+        pp_trace(" %s#%d failed with %s",__func__,_id,ex.what());
     }
 }
