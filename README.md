@@ -25,10 +25,14 @@ It is an agent written by C++, PHP and Python languages. And we hope to support 
 
 [Use c/cpp application ☚](DOC/C-CPP/Readme.md)
 
+## GoLang tutorial
+
+[go-aop-agent ☚](https://github.com/pinpoint-apm/go-aop-agent)
+
 ## Overview Pinpoint Common Agent
 
 ### Pinpoint-c-agent 
-![How does it work](images/pinpoint_v0.4.x.png)
+![How does it work](images/pinpoint_v0.5.x.png)
 
 ### Distributed Tracking system
 ![php_agent_example](images/php_agent_example.png)
@@ -52,6 +56,12 @@ It is an agent written by C++, PHP and Python languages. And we hope to support 
 QQ Group1: 897594820 | QQ Group2: 812507584 | DING Group
 :---:| :---: | :---:
 ![QQ Group1](images/NAVERPinpoint.png) | ![QQ Group2](images/NAVERPinpoint2.png) | ![DING Group](images/NaverPinpoint交流群-DING.jpg)
+
+## Contributing
+We are looking forward to your contributions via pull requests.
+
+### Contributors
+
 
 
 ## License
