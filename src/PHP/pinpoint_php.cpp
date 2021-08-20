@@ -80,6 +80,10 @@ static void pinpoint_log(char *msg);
 
 PHP_INI_BEGIN()
 
+
+STD_PHP_INI_ENTRY("pinpoint_php.SendSpanTimeOutMs", "0", PHP_INI_ALL,
+        OnUpdateLong,w_timeout_ms,zend_pinpoint_php_globals,pinpoint_php_globals)
+
 STD_PHP_INI_ENTRY("pinpoint_php.CollectorHost", "unix:/tmp/collector.sock", PHP_INI_ALL,
         OnUpdateString,co_host,zend_pinpoint_php_globals,pinpoint_php_globals)
 
@@ -130,10 +134,8 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_add_id_value, 0, 0, 1)
     ZEND_ARG_INFO(0, key)
     ZEND_ARG_INFO(0, nodeid)
 ZEND_END_ARG_INFO()
-
-
-
-ZEND_BEGIN_ARG_INFO(arginfo_none, 0)
+// php5 needs (0,0,0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_none, 0,0,0)
 ZEND_END_ARG_INFO()
 
 /* {{{ pinpioint_php_functions[]
@@ -446,7 +448,7 @@ PHP_FUNCTION(pinpoint_mark_as_error)
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|ll", &zkey, &zkey_len,&zvalue, &value_len,&_lineno,&_id) == FAILURE)
     {
-        zend_error(E_ERROR, "pinpoint_add_clues() expects (int, string).");
+        zend_error(E_ERROR, "pinpoint_mark_as_error() expects (string,string,int,int).");
         return;
     }
     msg = std::string(zkey,zkey_len);
@@ -456,7 +458,7 @@ PHP_FUNCTION(pinpoint_mark_as_error)
     zend_string* zvalue;
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "SS|ll", &zkey ,&zvalue,&_lineno,&_id) == FAILURE)
     {
-        zend_error(E_ERROR, "pinpoint_add_clues() expects (int, string).");
+        zend_error(E_ERROR, "pinpoint_mark_as_error() expects (string,string,int,int).");
         return;
     }
     msg = std::string(zkey->val,zkey->len);
@@ -624,7 +626,6 @@ PHP_FUNCTION(pinpoint_tracelimit)
 static void php_pinpoint_php_init_globals(zend_pinpoint_php_globals *pinpoint_php_globals)
 {
     memset(pinpoint_php_globals,0,sizeof(zend_pinpoint_php_globals));
-
 }
 
 /* }}} */
@@ -642,7 +643,8 @@ PHP_MINIT_FUNCTION(pinpoint_php)
     // global_agent_info.
     strncpy(global_agent_info.co_host ,PPG(co_host),MAX_ADDRESS_SIZE);
     global_agent_info.inter_flag = PPG(debug_report);
-    global_agent_info.trace_limit =PPG(tracelimit);
+    global_agent_info.timeout_ms = PPG(w_timeout_ms);
+    global_agent_info.trace_limit = PPG(tracelimit);
     global_agent_info.agent_type = 1500; // PHP
 
     if (PPG(utest_flag) == 1){
