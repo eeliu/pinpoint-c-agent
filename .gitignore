@@ -77,3 +77,4 @@ collector-agent/pinpoint-grpc-idl/
 *.so
 .clangd
 .vs
+*.dep
