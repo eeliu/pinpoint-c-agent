@@ -61,8 +61,11 @@ class NextSpanPlugin(Common.PinTrace):
 
     def onEnd(self, traceId, ret):
         ###############################################################
-        pinpoint.add_trace_header(Defines.PP_NEXT_SPAN_ID, pinpoint.get_context(
-            Defines.PP_NEXT_SPAN_ID, traceId), traceId)
+        nextSpan = pinpoint.get_context(
+            Defines.PP_NEXT_SPAN_ID, traceId)
+        if nextSpan:
+            pinpoint.add_trace_header(
+                Defines.PP_NEXT_SPAN_ID, nextSpan, traceId)
         if ret:
             pinpoint.add_trace_header_v2(
                 Defines.PP_HTTP_STATUS_CODE, str(ret.status_code), traceId)
@@ -72,4 +75,4 @@ class NextSpanPlugin(Common.PinTrace):
         return ret
 
     def onException(self, traceId, e):
-        pinpoint.add_trace_header(Defines.PP_ADD_EXCEPTION, str(e), traceId)
+        pinpoint.add_exception(str(e), traceId)

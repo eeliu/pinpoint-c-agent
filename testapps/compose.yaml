@@ -4,27 +4,70 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: 'password'
-      MYSQL_TCP_PORT: 3306  
+      MYSQL_TCP_PORT: 3306
     ports:
-      - '33060:3306' 
+      - '3306:3306'
     volumes:
       - ..:/workspace:cached
-       
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
     healthcheck:
-      test: ["CMD", "mysqladmin","-uroot","-ppassword" ,"ping", "-h", "localhost"]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "-uroot",
+          "-ppassword",
+          "ping",
+          "-h",
+          "localhost"
+        ]
       interval: 15s
       timeout: 10s
       retries: 10
-  
+
+  dev-mariadb:
+    image: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: test
+      MYSQL_TCP_PORT: 3307
+      # MYSQL_USER: root
+      # MYSQL_PASSWORD: password
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3307:3307"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "healthcheck.sh",
+          "--su-mysql",
+          "--connect",
+          "--innodb_initialized"
+        ]
+      start_period: 1m
+      interval: 1m
+      timeout: 5s
+      retries: 3
+
   dev-mysql-setup:
-    image: mysql:5.7 
+    image: mysql:5.7
     depends_on:
       dev-mysql:
         condition: service_healthy
     volumes:
-      - ..:/workspace:cached    
+      - ..:/workspace:cached
     # todo load all data 
-    entrypoint: [ "bash", "-c", "cd /workspace/testapps/ && sh load_sample_db.sh"]
+    entrypoint:
+      [
+        "bash",
+        "-c",
+        "cd /workspace/testapps/ && sh load_sample_db.sh"
+      ]
 
   redis:
     image: redis:alpine
@@ -48,6 +91,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      dev-collector:
+        condition: service_started
     restart: always
     build:
       dockerfile: testapps/flask.dockerfile
@@ -57,8 +102,8 @@ services:
 
     healthcheck:
       test: curl -f http://testapp-flask
-      interval: 5s 
-      timeout: 1s       
+      interval: 5s
+      timeout: 1s
 
   testapp-php:
     container_name: yii2
@@ -66,27 +111,27 @@ services:
       redis:
         condition: service_healthy
       dev-collector:
-        condition: service_started        
+        condition: service_started
     restart: always
     build:
-      dockerfile: testapps/php.dockerfile
+      dockerfile: testapps/PHP/php.dockerfile
       context: ../
     ports:
       - 8185:80
 
     healthcheck:
       test: curl -f http://testapp-php
-      interval: 5s 
-      timeout: 1s       
+      interval: 5s
+      timeout: 1s
 
   testapp-fastapi:
     container_name: fastapi
     depends_on:
       redis:
-        condition: service_healthy  
+        condition: service_healthy
       dev-collector:
         condition: service_started
-        
+
     restart: always
     build:
       dockerfile: testapps/fastapi.dockerfile
@@ -95,8 +140,8 @@ services:
       - 8186:8000
     healthcheck:
       test: curl -f http://testapp-fastapi:8000
-      interval: 5s 
-      timeout: 1s        
+      interval: 5s
+      timeout: 1s
 
   # test call self
   backend:
@@ -104,33 +149,37 @@ services:
     container_name: backend
     depends_on:
       redis:
-        condition: service_healthy    
+        condition: service_healthy
     build:
       dockerfile: testapps/backend.dockerfile
       context: ../
     ports:
-      - 8187:80  
+      - 8187:80
 
     healthcheck:
       test: curl -f http://backend
-      interval: 5s 
-      timeout: 1s       
-  
+      interval: 5s
+      timeout: 1s
+
   testapp-django:
     container_name: django
     depends_on:
       redis:
-        condition: service_healthy    
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      dev-collector:
+        condition: service_started
     restart: always
     build:
       dockerfile: testapps/django.dockerfile
       context: ../
     ports:
-      - 8188:8000  
+      - 8188:8000
     healthcheck:
       test: curl -f http://testapp-django:8000/polls
-      interval: 5s 
-      timeout: 1s     
+      interval: 5s
+      timeout: 1s
 
   httpbin:
     build:
@@ -142,7 +191,7 @@ services:
       interval: 5s
       timeout: 10s
       retries: 50
-    
+
   dev-collector:
     restart: always
     build:
@@ -164,20 +213,19 @@ services:
     volumes:
       - /etc/hosts:/etc/hosts
 
-
   mongodb:
     image: 'mongo'
     restart: always
     hostname: mongodb
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-    # ports:
-      # - 27017:27017
+    ports:
+      - 27017:27017
 
   python-plugins:
     build:
       dockerfile: testapps/python-plugins.dockerfile
-      context: ../     
+      context: ../
     profiles:
       - testing
     depends_on:
@@ -187,3 +235,225 @@ services:
         condition: service_healthy
       mongodb:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  grpc-py:
+    container_name: grpc-py
+    restart: always
+    build:
+      dockerfile: testapps/grpc_py.dockerfile
+      context: ../
+    ports:
+      - 50050:50050
+    depends_on:
+      dev-collector:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
+  grpc-py-client:
+    container_name: grpc-py-client
+    depends_on:
+      grpc-py:
+        condition: service_started
+    restart: always
+    build:
+      dockerfile: testapps/grpc_py_client.dockerfile
+      context: ../
+
+  java-agent:
+    container_name: spring
+    build:
+      dockerfile: testapps/java_call_app/spring.dockerfile
+      context: ../
+    ports:
+      - 8085:8080
+    restart: always
+    volumes:
+      - /etc/hosts:/etc/hosts
+
+  simple-php:
+    container_name: simple-php
+    depends_on:
+      dev-mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      dev-mariadb:
+        condition: service_healthy
+      memcached:
+        condition: service_healthy
+      dev-collector:
+        condition: service_started
+
+    restart: always
+    build:
+      dockerfile: testapps/SimplePHP/php.dockerfile
+      context: ../
+
+  postgres:
+    image: postgres:14-alpine
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_PASSWORD=pinpoint
+      - POSTGRES_USER=test
+      - POSTGRES_DB=test
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-d", "db_prod" ]
+      interval: 3s
+      timeout: 30s
+      retries: 5
+      start_period: 80s
+
+  php-compatible:
+    build:
+      dockerfile: testapps/php_compatible.dockerfile
+      context: ../
+      args:
+        - PHP_VERSION=${PHP_VERSION}
+    depends_on:
+      dev-mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      dev-mariadb:
+        condition: service_healthy
+
+  memcached:
+    image: memcached:alpine3.20
+    ports:
+      - "11211:11211"
+    restart: always
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "127.0.0.1", "11211" ]
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 80s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 50M
+  
+  php-wordpress:
+    build:
+      dockerfile: testapps/php_wordpress/php-wordpress.dockerfile
+      context: ../
+    ports:
+      - "8080:80"     
+    cap_add:
+      - SYS_PTRACE 
+    depends_on:
+      dev-mysql:
+        condition: service_healthy 
+      dev-collector:
+        condition: service_started        
+    healthcheck:
+      test: curl -f http://localhost:80
+      interval: 5s
+      timeout: 1s 
+
+  phpmyadmin:
+    build:
+      dockerfile: testapps/php_phpmyadmin/phpmyadmin.dockerfile
+      context: ../
+    environment:
+      - PMA_ARBITRARY=1   
+      - PMA_HOST=dev-mysql
+      - PMA_USER=root
+      - PMA_PASSWORD=password
+    ports:
+      - "8081:80"     
+    cap_add:
+      - SYS_PTRACE 
+    depends_on:
+      dev-mysql:
+        condition: service_healthy 
+      dev-collector:
+        condition: service_started 
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+    healthcheck:
+      test: curl -f http://localhost:80
+      interval: 5s
+      timeout: 1s          
+
+  cg_phpmyadmin:
+    image: phpmyadmin:apache
+    environment:
+      - PMA_ARBITRARY=1   
+      - PMA_HOST=dev-mysql
+      - PMA_USER=root
+      - PMA_PASSWORD=password
+    ports:
+      - "8082:80"     
+    cap_add:
+      - SYS_PTRACE 
+    depends_on:
+      dev-mysql:
+        condition: service_healthy 
+    deploy:
+      resources:
+        limits:
+          cpus: "2"       
+
+  flarum:
+    # image: 
+    build:
+      dockerfile: testapps/flarum/flarum.dockerfile
+      context: ../      
+    container_name: flarum
+    env_file:
+      - ./flarum/flarum.env
+    ports:
+      - 8888:8888
+    depends_on:
+      dev-mysql:
+        condition: service_healthy 
+      dev-collector:
+        condition: service_started    
+
+  cachet:
+    build:
+      dockerfile: testapps/cachethq/cachethq.dockerfile
+      context: ../    
+    ports:
+      - 8000:8000
+    environment:
+      - DB_DRIVER=pgsql
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - CACHE_DRIVER=redis
+      - DB_DATABASE=test
+      - DB_USERNAME=test
+      - DB_PASSWORD=pinpoint
+      - DB_PREFIX=chq_
+      - APP_KEY=${APP_KEY:-null}
+      - APP_LOG=errorlog
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=true
+      - REDIS_HOST=redis
+      - REDIS_DATABASE=0
+      - REDIS_PORT=6379
+      - DEBUG=true
+      - APP_KEY=base64:JlA4Fr6ysePTdzUyqGEmPXxknANEIfOF7M2krYh8wgM=
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      dev-collector:
+        condition: service_started           
+    restart: on-failure        

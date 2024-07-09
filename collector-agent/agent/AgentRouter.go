@@ -33,19 +33,20 @@ type AgentRouter struct {
 }
 
 type TSpanEvent struct {
-	Name           string       `json:"name"`
-	ExceptionInfo  string       `json:"EXP,omitempty"`
-	DestinationId  string       `json:"dst,omitempty"`
-	NextSpanId     int64        `json:"nsid,string,omitempty"`
-	EndPoint       string       `json:"server,omitempty"`
-	StartElapsed   int32        `json:"S"`
-	EndElapsed     int32        `json:"E"`
-	StartElapsedV2 int32        `json:":S"`
-	EndElapsedV2   int32        `json:":E"`
-	ServiceType    int32        `json:"stp,string"`
-	Clues          []string     `json:"clues,omitempty"`
-	Calls          []TSpanEvent `json:"calls,omitempty"`
-	SqlMeta        string       `json:"SQL,omitempty"`
+	Name            string          `json:"name"`
+	ExceptionInfo   string          `json:"EXP,omitempty"`
+	ExceptionInfoV2 *TExceptionInfo `json:"EXP_V2,omitempty"`
+	DestinationId   string          `json:"dst,omitempty"`
+	NextSpanId      int64           `json:"nsid,string,omitempty"`
+	EndPoint        string          `json:"server,omitempty"`
+	StartElapsed    int32           `json:"S"`
+	EndElapsed      int32           `json:"E"`
+	StartElapsedV2  int32           `json:":S"`
+	EndElapsedV2    int32           `json:":E"`
+	ServiceType     int32           `json:"stp,string"`
+	Clues           []string        `json:"clues,omitempty"`
+	Calls           []*TSpanEvent   `json:"calls,omitempty"`
+	SqlMeta         string          `json:"SQL,omitempty"`
 }
 
 func (spanEv *TSpanEvent) GetEndElapsed() int32 {
@@ -70,35 +71,43 @@ type TErrorInfo struct {
 	Line int    `json:"line"`
 }
 
+type TExceptionInfo struct {
+	ClassName string `json:"C"`
+	Message   string `json:"M"`
+	StartTime int64  `json:":S"`
+}
+
 type TSpan struct {
-	AppServerType         int32        `json:"FT"`
-	AppServerTypeV2       int32        `json:":FT"`
-	ParentAppServerType   int32        `json:"ptype,string"`
-	ParentSpanId          int64        `json:"psid,string"`
-	ParentApplicationName string       `json:"pname"`
-	StartTime             int64        `json:"S"`
-	StartTimeV2           int64        `json:":S"`
-	ElapsedTime           int32        `json:"E"`
-	ElapsedTimeV2         int32        `json:":E"`
-	AppId                 string       `json:"appid"`
-	AppIdV2               string       `json:":appid"`
-	AppName               string       `json:"appname"`
-	AppNameV2             string       `json:":appname"`
-	Calls                 []TSpanEvent `json:"calls"`
-	Clues                 []string     `json:"clues,omitempty"`
-	SpanName              string       `json:"name"`
-	SpanId                int64        `json:"sid,string"`
-	ServerType            int32        `json:"stp,string"`
-	TransactionId         string       `json:"tid"`
-	Uri                   string       `json:"uri"`
-	UT                    string       `json:"UT,omitempty"`
-	EndPoint              string       `json:"server"`
-	RemoteAddr            string       `json:"client"`
-	AcceptorHost          string       `json:"Ah"`
-	ExceptionInfo         string       `json:"EXP,omitempty"`
-	ErrorInfo             *TErrorInfo  `json:"ERR,omitempty"`
-	NginxHeader           string       `json:"NP,omitempty"`
-	ApacheHeader          string       `json:"AP,omitempty"`
+	AppServerType         int32           `json:"FT"`
+	AppServerTypeV2       int32           `json:":FT"`
+	ParentAppServerType   int32           `json:"ptype,string"`
+	ParentSpanId          int64           `json:"psid,string"`
+	ParentApplicationName string          `json:"pname"`
+	StartTime             int64           `json:"S"`
+	StartTimeV2           int64           `json:":S"`
+	ElapsedTime           int32           `json:"E"`
+	ElapsedTimeV2         int32           `json:":E"`
+	AppId                 string          `json:"appid"`
+	AppIdV2               string          `json:":appid"`
+	AppName               string          `json:"appname"`
+	AppNameV2             string          `json:":appname"`
+	Calls                 []*TSpanEvent   `json:"calls"`
+	Clues                 []string        `json:"clues,omitempty"`
+	SpanName              string          `json:"name"`
+	SpanId                int64           `json:"sid,string"`
+	ServerType            int32           `json:"stp,string"`
+	TransactionId         string          `json:"tid"`
+	Uri                   string          `json:"uri"`
+	UT                    string          `json:"UT,omitempty"`
+	EndPoint              string          `json:"server"`
+	RemoteAddr            string          `json:"client"`
+	AcceptorHost          string          `json:"Ah"`
+	ExceptionInfo         string          `json:"EXP,omitempty"`
+	ExceptionInfoV2       *TExceptionInfo `json:"EXP_V2,omitempty"`
+	ErrorInfo             *TErrorInfo     `json:"ERR,omitempty"`
+	ErrorMarked           int32           `json:"EA,omitempty"`
+	NginxHeader           string          `json:"NP,omitempty"`
+	ApacheHeader          string          `json:"AP,omitempty"`
 }
 
 func (span *TSpan) IsFailed() bool {
@@ -162,7 +171,7 @@ func (span *TSpan) GetAppid() string {
 	}
 }
 
-func (span *TSpan) GetAppname() string {
+func (span *TSpan) GetAppName() string {
 	if len(span.AppNameV2) > 0 {
 		return span.AppNameV2
 	} else {
@@ -188,27 +197,16 @@ func (manager *AgentRouter) Clean() {
 	manager.rwMutex.RUnlock()
 }
 
-//todo rename createAgent
-func (manager *AgentRouter) createAgent(id, name string, agentType int32, startTime string) *GrpcAgent {
-	agent := GrpcAgent{PingId: manager.PingId, AgentOnLine: false}
-	manager.PingId += 1
-	agent.Init(id, name, agentType, startTime)
-	agent.Start()
-
-	log.Infof("agent:%v is launched", &agent)
-	return &agent
-}
-
-func GetAgentInfo(span *TSpan) (appid, appname string, appServerType int32, startTime string, err error) {
+func GetAgentInfo(span *TSpan) (appid, name string, appServerType int32, startTime string, err error) {
 
 	// new feat: get current startTime
 	startTime = strconv.FormatInt(common.GetConfig().StartTime, 10) + "000"
 	holder := strings.Split(span.TransactionId, "^")
 	if len(holder) < 3 {
 		log.Warn("tid in wrong format")
-	} else if len(holder[1]) == 10 { // seconds format
+	} else if len(holder[1]) <= 10 { // seconds format
 		startTime = holder[1] + "000"
-	} else { // miliseconds format
+	} else { // milliseconds format
 		startTime = holder[1]
 	}
 
@@ -217,10 +215,10 @@ func GetAgentInfo(span *TSpan) (appid, appname string, appServerType int32, star
 		return "", "", 0, "", errors.New("no appid")
 	}
 
-	appname = span.GetAppname()
+	name = span.GetAppName()
 
-	if len(appname) == 0 {
-		return "", "", 0, "", errors.New("no appname")
+	if len(name) == 0 {
+		return "", "", 0, "", errors.New("no appName")
 	}
 
 	appServerType = span.GetAppServerType()
@@ -229,7 +227,7 @@ func GetAgentInfo(span *TSpan) (appid, appname string, appServerType int32, star
 		return "", "", 0, "", errors.New("no AppServerType(FT)")
 	}
 
-	return appid, appname, appServerType, startTime, nil
+	return appid, name, appServerType, startTime, nil
 }
 
 func (manager *AgentRouter) DispatchPacket(packet *RawPacket) error {
@@ -237,14 +235,15 @@ func (manager *AgentRouter) DispatchPacket(packet *RawPacket) error {
 	span := &TSpan{
 		// ParentSpanId:-1 is part of logic in pinpoint
 		ParentSpanId: -1,
+		ErrorMarked:  0,
 	}
 
 	if err := json.Unmarshal(packet.RawData, span); err != nil {
 		log.Warnf("json.Unmarshal err:%v", err)
-		goto PACKET_INVALIED
+		goto PACKET_INVALID
 	}
 
-	if appid, appname, serverType, startTime, err := GetAgentInfo(span); err == nil {
+	if appid, appName, serverType, startTime, err := GetAgentInfo(span); err == nil {
 		manager.rwMutex.RLock()
 		log.Debug("Read-lock is holding")
 		agent, OK := manager.AgentMap[appid]
@@ -258,7 +257,8 @@ func (manager *AgentRouter) DispatchPacket(packet *RawPacket) error {
 			if _t, OK := manager.AgentMap[appid]; OK {
 				agent = _t
 			} else {
-				agent = manager.createAgent(appid, appname, serverType, startTime)
+				agent = createGrpcAgent(appid, appName, serverType, manager.PingId, startTime)
+				manager.PingId += 1
 			}
 			manager.AgentMap[appid] = agent
 			manager.rwMutex.Unlock()
@@ -277,6 +277,6 @@ func (manager *AgentRouter) DispatchPacket(packet *RawPacket) error {
 		return err
 	}
 
-PACKET_INVALIED:
+PACKET_INVALID:
 	return fmt.Errorf("input packet invalid %s", packet.RawData)
 }

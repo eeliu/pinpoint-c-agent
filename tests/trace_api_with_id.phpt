@@ -15,34 +15,34 @@ function exception_handler($exception) {
     global $id;
 
     $lastId = $id;
-    pinpoint_add_clue("EXP",$exception->getMessage(),$id);
+    _pinpoint_add_clue("EXP",$exception->getMessage(),$id);
 
     do
     {
-        $lastId = pinpoint_end_trace($lastId);
+        $lastId = _pinpoint_end_trace($lastId);
     }while($lastId != 0);
     echo "Uncaught exception: " , $exception->getMessage(), "\n";
 }
 
 set_exception_handler('exception_handler');
 
-$id = pinpoint_start_trace($id);
-pinpoint_add_clue("name","Foo",$id);
-$id = pinpoint_start_trace($id);
-pinpoint_add_clues("name","Foo1",$id);
-$id = pinpoint_start_trace($id);
-pinpoint_add_clue("name","Foo2",$id);
-$id = pinpoint_end_trace($id);
-$id = pinpoint_start_trace($id);
-pinpoint_add_clues("name","Foo3",$id);
-pinpoint_add_clue("name","Foo4",$id);
-$id = pinpoint_end_trace($id);
-pinpoint_add_clues("name","Foo5",$id);
+$id = _pinpoint_start_trace($id);
+_pinpoint_add_clue("name","Foo",$id);
+$id = _pinpoint_start_trace($id);
+_pinpoint_add_clues("name","Foo1",$id);
+$id = _pinpoint_start_trace($id);
+_pinpoint_add_clue("name","Foo2",$id);
+$id = _pinpoint_end_trace($id);
+$id = _pinpoint_start_trace($id);
+_pinpoint_add_clues("name","Foo3",$id);
+_pinpoint_add_clue("name","Foo4",$id);
+$id = _pinpoint_end_trace($id);
+_pinpoint_add_clues("name","Foo5",$id);
 throw  new Exception("too heavy, throw it");
-$id = pinpoint_end_trace($id);
-pinpoint_add_clue("name","Foo",$id);
+$id = _pinpoint_end_trace($id);
+_pinpoint_add_clue("name","Foo",$id);
 
-$id = pinpoint_end_trace($id);
+$id = _pinpoint_end_trace($id);
 
 --EXPECTF--
 [pinpoint] [%d] [%d] [0] pinpoint_start child  [128]
@@ -60,7 +60,7 @@ $id = pinpoint_end_trace($id);
 [pinpoint] [%d] [%d] [127] add clue key:EXP value:too heavy, throw it
 [pinpoint] [%d] [%d] [127] pinpoint_end_trace Done!
 [pinpoint] [%d] [%d]this span:({":E":%d,":FT":1500,":S":%d,"calls":[{":E":%d,":S":%d,"EXP":"too heavy, throw it","calls":[{":E":%d,":S":%d,"name":"Foo2"},{":E":%d,":S":%d,"clues":["name:Foo3"],"name":"Foo4"}],"clues":["name:Foo1","name:Foo5"]}],"name":"Foo"})
-[pinpoint] [%d] [%d]agent try to connect:(unix:/unexist_file.sock)
-[pinpoint] [%d] [%d]connect:(/unexist_file.sock) failed as (No such file or directory)
+[pinpoint] [%d] [%d]agent try to connect:(:/unexist_file.sock)
+[pinpoint] [%d] [%d]connect:(:/unexist_file.sock) failed error_code: 2
 [pinpoint] [%d] [%d] [128] pinpoint_end_trace Done!
 Uncaught exception: too heavy, throw it

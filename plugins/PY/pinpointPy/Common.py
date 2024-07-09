@@ -76,7 +76,7 @@ class PinTrace:
         return cls.isSample(*args, **kwargs)
 
     def onEnd(self, traceId, ret):
-        parentId: int = pinpoint.end_trace(trace_id=traceId)
+        parentId = pinpoint.end_trace(traceId)
         get_trace_context().set_parent_id(parentId)
 
     def onException(self, traceId, e):
@@ -246,7 +246,6 @@ class PinTransaction(PinTrace):
         if header.ParentTid != '':
             tid = header.ParentTid
             pinpoint.add_trace_header(Defines.PP_PARENT_SPAN_ID, tid, traceId)
-            pinpoint.add_trace_header(Defines.PP_NEXT_SPAN_ID, sid, traceId)
         else:
             tid = pinpoint.gen_tid()
 
@@ -255,7 +254,7 @@ class PinTransaction(PinTrace):
         pinpoint.add_context(Defines.PP_TRANSCATION_ID, tid, traceId)
 
         if header.Error:
-            pinpoint.mark_as_error(header.Error, header.Error, traceId, 0)
+            pinpoint.mark_as_error(header.Error, header.Error, 0, traceId)
 
         return traceId, args, kwargs
 
@@ -263,5 +262,5 @@ class PinTransaction(PinTrace):
         super().onEnd(traceId, ret)
 
     def onException(self, traceId, e):
-        pinpoint.mark_as_error(str(e), "", traceId)
+        pinpoint.mark_as_error(str(e), "", 0, traceId)
         raise e

@@ -1,10 +1,10 @@
 ## Install Collector Agent
 `Collector-Agent` formats the span from PHP/Python/C/CPP-Agent and send to `Pinpoint-Collector`.
 
-### 1. build from source
-1. Goto collector-agent(`pinpoint-c-agent/collector-agent`)
-2. Execute command `make`
-3. Add environment variables:
+### 1. Build
+- Install: `GOBIN=/usr/local/bin/ go install github.com/pinpoint-apm/pinpoint-c-agent/collector-agent@dev`
+  - ❗❗❗Note: collector-agent: located into `/usr/local/bin/`
+- Add environment variables:
     ```
     export PP_COLLECTOR_AGENT_SPAN_IP=dev-pinpoint
     export PP_COLLECTOR_AGENT_SPAN_PORT=9993
@@ -19,22 +19,22 @@
     ```
     1. `PP_COLLECTOR_AGENT_SPAN_IP`, `PP_COLLECTOR_AGENT_AGENT_IP`, `PP_COLLECTOR_AGENT_STAT_IP`: Set the IP of pinpoint-collector.
     2. `PP_COLLECTOR_AGENT_SPAN_PORT`, `PP_COLLECTOR_AGENT_AGENT_PORT`, `PP_COLLECTOR_AGENT_STAT_PORT`: Set the port of pinpoint-collector(grpc).
-    3. `PP_LOG_DIR`: Set the path of Collector-Agent's log file.
+    3. `PP_LOG_DIR`: Set the path of collector-agent's log file.
     4. `PP_Log_Level`: Set the log level.
-    5. `PP_ADDRESS`: Set the address of `Collector-Agent`, then `PHP/Python-Agent` will connect Collector-Agent through this address.
-4. Run `Collector-Agent` by executing command `./CollectorAgent`
+    5. `PP_ADDRESS`: Set the address of `collector-agent`, then `PHP/Python-Agent` will connect collector-agent through this address.
+- Run `collector-agent` by executing command `./collector-agent`
    
 ### 2. Use docker images
 
 ```sh
-docker run -itd -p 9999:9999  --env-file ./env.list ghcr.io/pinpoint-apm/pinpoint-c-agent/collector-agent:0.4.15
+docker run -itd -p 9999:9999  --env-file ./env.list ghcr.io/pinpoint-apm/pinpoint-c-agent/collector-agent:0.5.0
 ```
 ### 3. K8s side car
 
 server.yaml sample
 
 ``` yml
-- image: ghcr.io/pinpoint-apm/pinpoint-c-agent/collector-agent:0.4.14
+- image: ghcr.io/pinpoint-apm/pinpoint-c-agent/collector-agent:0.5.0
         name: collector-agent
         args: ["-RecvBufSize=1048576"]
         securityContext:
