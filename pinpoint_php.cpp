@@ -33,6 +33,10 @@
 
 /* $Id$ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "zend_API.h"
 #include "zend_string.h"
 #include "zend_types.h"
@@ -40,10 +44,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <stdio.h>
-#include <strings.h>
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 
 // clang-format off
 #include "php.h"
@@ -566,12 +566,14 @@ PHP_FUNCTION(_pinpoint_add_clues) {
   zend_string *zvalue;
   if (zend_parse_parameters(ZEND_NUM_ARGS(), "SS|ll", &zkey, &zvalue, &_id,
                             &_flag) == FAILURE) {
+
     zend_error(E_ERROR, "pinpoint_add_clues() expects (int, string).");
     return;
   }
   key = std::string(zkey->val, zkey->len);
   value = std::string(zvalue->val, zvalue->len);
 #endif
+  pp_trace("--------");
   NodeID id = (_id == -1) ? (pinpoint_get_per_thread_id()) : ((NodeID)_id);
   pinpoint_add_clues(id, key.c_str(), value.c_str(), (E_NODE_LOC)_flag);
 }
@@ -856,7 +858,8 @@ static pp_interceptor_v_t *make_interceptor(zend_string *name, zval *before,
                                             zend_function *origin_func) {
   pp_interceptor_v_t *interceptor =
       (pp_interceptor_v_t *)malloc(sizeof(pp_interceptor_v_t));
-  bzero(interceptor, sizeof(*interceptor));
+  // bzero(interceptor, sizeof(*interceptor));
+  memset(interceptor, 0, sizeof(*interceptor));
   interceptor->name = zend_string_dup(name, 0);
   interceptor->origin = origin_func->internal_function.handler;
   interceptor->origin_func = origin_func;
