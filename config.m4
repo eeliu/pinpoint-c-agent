@@ -43,9 +43,9 @@ if test "$PHP_PINPOINT_PHP" != "no"; then
     common/jsoncpp/lib_json/json_value.cpp \
     common/jsoncpp/lib_json/json_reader.cpp \
   "
-
-
-  PINPOINT_PHP_SHARED_LIBADD="$PINPOINT_PHP_SHARED_LIBADD -lrt"
+  if  [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    PINPOINT_PHP_SHARED_LIBADD="$PINPOINT_PHP_SHARED_LIBADD -lrt"
+  fi
   
   PHP_NEW_EXTENSION(pinpoint_php,$PINPOINT_SRCS, $ext_shared)
 fi
