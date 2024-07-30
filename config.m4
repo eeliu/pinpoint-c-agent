@@ -11,13 +11,7 @@ if test "$PHP_PINPOINT_PHP" != "no"; then
   
   PHP_REQUIRE_CXX()
   PHP_SUBST(PINPOINT_PHP_SHARED_LIBADD)
-  PHP_ADD_LIBRARY(stdc++, 1, PINPOINT_PHP_SHARED_LIBADD)
-  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/common/include)
-  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/common/jsoncpp/include)
-  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/common/jsoncpp/include)
-  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/common/src)
-  AC_DEFINE(HAVE_PINPOINT_PHP, 1, [Whether you have pinpoint])
-
+  
   # echo "------Build common libraries------------"
   # mkdir -p PHP_EXT_SRCDIR()/build
   # cd build 
@@ -48,4 +42,15 @@ if test "$PHP_PINPOINT_PHP" != "no"; then
   fi
   
   PHP_NEW_EXTENSION(pinpoint_php,$PINPOINT_SRCS, $ext_shared)
+  PHP_ADD_LIBRARY(stdc++, 1, PINPOINT_PHP_SHARED_LIBADD)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/common/include)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/common/jsoncpp/include)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/common/jsoncpp/include)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/common/src)
+  AC_DEFINE(HAVE_PINPOINT_PHP, 1, [Whether you have pinpoint])
+  PHP_ADD_BUILD_DIR(common/src/)
+  PHP_ADD_BUILD_DIR(common/src/NodePool/)
+  PHP_ADD_BUILD_DIR(common/src/ConnectionPool/)
+  PHP_ADD_BUILD_DIR(common/src/Cache/)
+  PHP_ADD_BUILD_DIR(common/jsoncpp/lib_json/)
 fi
