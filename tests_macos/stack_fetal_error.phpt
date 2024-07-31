@@ -4,7 +4,7 @@ pinpoint_php internal test case [pinpoint_test_main]
 <?php if (!extension_loaded("pinpoint_php")) print "skip"; ?>
 --INI--
 pinpoint_php.CollectorHost=tcp:localhost:10000
-pinpoint_php.SendSpanTimeOutMs=0
+pinpoint_php.SendSpanTimeOutMs=-1
 pinpoint_php.UnitTest=true
 ;pinpoint_php._limit for internal use. User do not use it
 pinpoint_php._limit=yes
@@ -58,5 +58,5 @@ Stack trace:
   thrown in %s on line 23
 [pinpoint] [%d] [%d] [127] pinpoint_end_trace Done!
 [pinpoint] [%d] [%d]this span:({":E":%d,":FT":1500,":S":%d,"ERR":{"file":"%s","line":23,"msg":"Uncaught Exception: I am testting in %s:23\nStack trace:\n#0 %s(30): Test()\n#1 {main}\n  thrown"},"calls":[{":E":%d,":S":%d,"name":"Foo"}]})
-[pinpoint] [%d] [%d]agent try to connect:(localhost:10000)
+[pinpoint] [%d] [%d][unittest] current span was dropped
 [pinpoint] [%d] [%d] [128] pinpoint_end_trace Done!
