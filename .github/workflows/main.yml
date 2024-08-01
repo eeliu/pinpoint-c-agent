@@ -153,7 +153,6 @@ jobs:
         run: |
           php -m
           php -v
-          where.exe php
           mkdir output
           phpize
           ./configure.bat --enable-pinpoint_php --enable-debug-pack --enable-object-out-dir=output --with-prefix=${{steps.setup-php-sdk.outputs.prefix}}
@@ -168,8 +167,18 @@ jobs:
       - name: package
         run: |
           mkdir _package_
-          cp output/Release/php_pinpoint_php.* _package_  -ErrorAction SilentlyContinue
-          cp output/Release_TS/php_pinpoint_php.* _package_  -ErrorAction SilentlyContinue
+          if (Test-Path -Path output/Release/ -PathType Container) {
+              cp output/Release/php_pinpoint_php.dll _package_
+              cp output/Release/php_pinpoint_php.pdb _package_
+              cp output/Release/php_pinpoint_php.lib _package_
+          } 
+
+          if (Test-Path -Path output/Release_TS/ -PathType Container) {
+              cp output/Release_TS/php_pinpoint_php.dll _package_
+              cp output/Release_TS/php_pinpoint_php.pdb _package_
+              cp output/Release_TS/php_pinpoint_php.lib _package_
+          } 
+
           cp NOTICE _package_
           cp README.md _package_
           cp CHANGES-PHP.md _package_
