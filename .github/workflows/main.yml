@@ -309,3 +309,37 @@ jobs:
           go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
           # export PATH="$PATH:$(go env GOPATH)/bin"
           cd collector-agent && go mod tidy && go test ./... -v
+
+  Release-Collector-agent:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: Collector-agent
+    strategy:
+      matrix:
+        # build and publish in parallel: linux/386, linux/amd64, linux/arm64, windows/386, windows/amd64, darwin/amd64, darwin/arm64
+        goos: [linux, windows, darwin]
+        goarch: ["386", amd64, arm64]
+        exclude:
+          - goarch: "386"
+            goos: darwin
+          - goarch: arm64
+            goos: windows
+    steps:
+    - name: Show environment
+      run: export
+    - uses: actions/checkout@v2
+    - uses: wangyoucao577/go-release-action@v1.18
+      id: release-ca
+      with:
+        goos: ${{ matrix.goos }}
+        goarch: ${{ matrix.goarch }}
+        project_path: "collector-agent"
+        binary_name: "collector-agent"
+        build_command: "make server TAG=v0.6.4"
+        # extra_files: LICENSE CHANGES.md
+
+    - name: Release collector-agent-package
+      id: rel_php_pak
+      uses: softprops/action-gh-release@v2
+      with:
+        files: ${{ steps.release-ca.outputs.release_asset_dir }}/*
