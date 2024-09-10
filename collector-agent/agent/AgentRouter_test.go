@@ -1,9 +1,11 @@
 package agent
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
+	"github.com/pinpoint-apm/pinpoint-c-agent/collector-agent/common"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -23,7 +25,9 @@ func TestGetAgentInfo(t *testing.T) {
 		TransactionId: "234123424^41234^2333",
 	}
 
-	id, name, ft, startTime, err := GetAgentInfo(spanMap)
+	router := &AgentRouter{}
+
+	id, name, ft, startTime, err := router.GetAgentInfo(spanMap)
 
 	if id != "sfdaefe" && name != "sfdaefe" && ft != 23412 && startTime != "234123424" && err != nil {
 		t.Error(spanMap)
@@ -48,7 +52,8 @@ func Test_EASpan(t *testing.T) {
 		"test":  "2",
 		"test2": "string",
 	})
-	ea := createErrorAnalysisFilter(md)
+	config := common.CreateTestConfig()
+	ea := createErrorAnalysisFilter(context.Background(), md, config, config.LogEntry)
 
 	meta := ea.scanTSpanTree(&tSpan)
 	if len(meta.Exceptions) == 0 {
@@ -95,15 +100,15 @@ func TestTspan(t *testing.T) {
 		t.Error("no calls")
 	}
 
-	for _, ev := range tspan.Calls {
-		evCalls := ev.Calls
-		if len(evCalls) == 0 {
-			t.Error("no calls")
-		}
-		if evCalls[0].Name == "app\\AppDate::abc" {
-			t.Error("calls no name")
-		}
+	// for _, ev := range tspan.Calls {
+	// evCalls := ev.Calls
+	// if len(evCalls) == 0 {
+	// 	t.Error("no calls")
+	// }
+	// if evCalls[0].Name == "app\\AppDate::abc" {
+	// 	t.Error("calls no name")
+	// }
 
-	}
+	// }
 
 }

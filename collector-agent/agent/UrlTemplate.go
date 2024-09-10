@@ -53,8 +53,10 @@ type UrlTemplateReport struct {
 	mu            sync.Mutex
 }
 
+func (utr *UrlTemplateReport) Stop() {}
+
 func (utr *UrlTemplateReport) Interceptor(span *TSpan) bool {
-	if len(span.UT) > 0 {
+	if span.UT != nil {
 		// found uri templated
 		utr.updateUriSnapshot(span)
 	}
@@ -64,7 +66,7 @@ func (utr *UrlTemplateReport) Interceptor(span *TSpan) bool {
 func (utr *UrlTemplateReport) updateUriSnapshot(span *TSpan) {
 	utr.mu.Lock()
 	defer utr.mu.Unlock()
-	ut := span.UT
+	ut := *span.UT
 	var st *statHistograms
 	var ok bool
 	if st, ok = utr.uriMap[ut]; !ok {
