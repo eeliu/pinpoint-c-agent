@@ -25,12 +25,16 @@
 #include "common.h"
 #include "Context/ContextType.h"
 #include "json/json.h"
+#include "json/value.h"
 #include <atomic>
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <mutex>
 #include <stdarg.h>
 #include <memory>
+#include <utility>
 #include <vector>
 #include <inttypes.h>
 #include <vector>
@@ -43,94 +47,127 @@ using Context::LongContextType;
 using Context::StringContextType;
 class WrapperTraceNodePtr;
 const static int MAX_SUB_TRACE_NODES_LIMIT = 2048;
-typedef std::shared_ptr<ContextType> _ContextType_;
-using EndTraceCallBackFunc = std::function<bool()>;
-using EndTraceCallBackFuncVec = std::vector<EndTraceCallBackFunc>;
+typedef std::shared_ptr<ContextType> ContextType_Ptr;
+// protect value by unique, it's friendly to json::value append
+using Value_Ptr = std::unique_ptr<Json::Value>;
+
+using UserOptionalSettingFunc = std::function<bool()>;
+using UserOptionalSettingFunc_Vec = std::vector<UserOptionalSettingFunc>;
+class WrapperTraceNodePtr;
 class TraceNode {
-public:
-  /**                                 sibling_id_
-   * current_node       <--------------------------------------------- sibling_node
-   *         |-------------------------------------|
-   *                                                v
-   *     child_head_id_ <- next <-next <- ...<-last_child_id_
-   */
 
-  NodeID sibling_id_;    // sibling_id_ is brother node id; it's a next_ptr to child_list
-  NodeID last_child_id_; // last_child_id_ is the end of child_list
+private:
+  using Lock_t = std::mutex;
+  using ContextMap_t = std::map<std::string, ContextType_Ptr>;
+  struct RootTraceNodeExtra {
+    Lock_t lock;
+    NodeID last;
+    NodeID next;
+    // uint64_t fellows_limit;
+    E_AGENT_STATUS status;
+    std::atomic<int32_t> sequence;
+    ContextMap_t context_map;
+    RootTraceNodeExtra() {
+      last = E_INVALID_NODE;
+      next = E_INVALID_NODE;
+      status = E_TRACE_PASS;
+      sequence = 0;
+    }
+    ~RootTraceNodeExtra() { context_map.clear(); }
+    int32_t createNewSequence() {
+      sequence++;
+      return sequence.load();
+    }
+  };
 
-  NodeID parent_id_; // parent Id [end_trace] avoiding re-add
-  NodeID root_id_;   // highway to root node
-  NodeID id_;
-
-  uint64_t start_time;
-  uint64_t fetal_error_time;
-  uint64_t limit;
-  uint64_t cumulative_time;
-  uint64_t root_start_time;
-  uint64_t parent_start_time;
-  bool set_exp_;
-
-public:
-  void StartTimer();
-  void EndTimer();
-
-  DEPRECATED("") void WakeUpTimer();
-
-  void EndSpanEvent();
-  void EndSpan();
+  std::unique_ptr<RootTraceNodeExtra> root_node_extra_ptr_ = {nullptr};
 
 public:
-  void AddChildTraceNode(TraceNode& child);
-  DEPRECATED("") void AddChildTraceNode(WrapperTraceNodePtr& child);
+  void UpgradeToRootNode() {
+    root_node_extra_ptr_ = std::unique_ptr<RootTraceNodeExtra>(new RootTraceNodeExtra());
+  }
+
+  int32_t CreateNewSequence() {
+    return root_node_extra_ptr_ ? root_node_extra_ptr_->createNewSequence() : -1;
+  }
+
+  NodeID GetLastNode() {
+    return root_node_extra_ptr_ ? root_node_extra_ptr_->last : E_INVALID_NODE;
+  }
+
+  void SetLastNode(NodeID last) {
+    if (root_node_extra_ptr_) {
+      root_node_extra_ptr_->last = last;
+    }
+  }
+
+  void SetStatus(E_AGENT_STATUS status) {
+    if (root_node_extra_ptr_) {
+      root_node_extra_ptr_->status = status;
+    }
+  }
+
+  E_AGENT_STATUS GetStatus() {
+    if (root_node_extra_ptr_) {
+      return root_node_extra_ptr_->status;
+    } else {
+      return E_AGENT_INTERNAL_ERROR;
+    }
+  }
+
+public:
+  NodeID root_id_ = {E_INVALID_NODE};
+  NodeID parent_id_ = {E_INVALID_NODE};
+  NodeID id_ = {E_INVALID_NODE};
+  NodeID next_ = {E_INVALID_NODE};
+
+  int32_t depth_ = {1};
+  int32_t sequence_ = {-1};
+  uint64_t trace_start_time_ = {0};
+  uint64_t parent_start_time_ = {0};
+
+  // the naming from pinpoint protocol
+  uint64_t expired_time = {0};
+  bool set_exp_ = {false};
+
+public:
+  void StartTrace();
+
+  void BindParentTrace(WrapperTraceNodePtr&);
+
+  void EndTrace();
+
+public:
+  void AddSubTraceNode(WrapperTraceNodePtr& root, TraceNode& sub_node);
   inline bool IsRootNode() const { return this->root_id_ == id_; }
 
 public:
-  TraceNode() {
-    this->id_ = E_INVALID_NODE;
-    this->root_id_ = E_INVALID_NODE;
-    this->resetRelative();
-    this->resetStatus();
-    this->ref_count_ = 0;
-    this->font_type_ = 0;
-    error_.set = false;
-  }
+  TraceNode() {}
 
-  virtual ~TraceNode();
+  virtual ~TraceNode() = default;
 
-  TraceNode& reset(NodeID id) {
-    std::lock_guard<std::mutex> _safe(this->mlock);
-    this->clearAttach();
-    this->initId(id);
-    this->resetStatus();
-    this->resetRelative();
-    this->ref_count_ = 0;
-    return *this;
-  }
+  TraceNode& Reset(NodeID id);
 
   NodeID getId() const { return this->id_; }
 
   void getContext(const char* key, std::string& value) {
-    std::lock_guard<std::mutex> _safe(this->mlock);
-    _ContextType_& ctx = this->context_.at(key);
+    ContextType_Ptr& ctx = this->context_map_.at(key);
     value = ctx->asStringValue();
   }
 
   void getContext(const char* key, long& value) {
-    std::lock_guard<std::mutex> _safe(this->mlock);
-    _ContextType_& ctx = this->context_.at(key);
+    ContextType_Ptr& ctx = this->context_map_.at(key);
     value = ctx->asLongValue();
   }
 
   void setContext(const char* key, const char* buf) {
-    std::lock_guard<std::mutex> _safe(this->mlock);
-    _ContextType_ context(std::make_shared<StringContextType>(buf));
-    this->context_[key] = context;
+    ContextType_Ptr context(std::make_shared<StringContextType>(buf));
+    this->context_map_[key] = context;
   }
 
   void setContext(const char* key, long l) {
-    std::lock_guard<std::mutex> _safe(this->mlock);
-    _ContextType_ context(std::make_shared<LongContextType>(l));
-    this->context_[key] = context;
+    ContextType_Ptr context(std::make_shared<LongContextType>(l));
+    this->context_map_[key] = context;
   }
 
 public:
@@ -142,8 +179,6 @@ public:
   bool operator!=(TraceNode const& _node) const { return this->id_ != _node.id_; }
 
 private:
-  int font_type_;
-
   struct Error {
     std::string message;
     std::string file_name;
@@ -152,8 +187,6 @@ private:
   } error_;
 
 public:
-  void SetFontType(int type) { font_type_ = type; }
-
   void SetErrorInfo(std::string&& msg, std::string&& filename, uint32_t line) {
     error_.message = std::move(msg);
     error_.file_name = std::move(filename);
@@ -162,125 +195,72 @@ public:
   }
 
 public:
-  void AddTraceDetail(const char* key, const char* v) {
-    std::lock_guard<std::mutex> _safe(this->mlock);
-    this->_value[key] = v;
+  void AddAnnotation(const char* key, const char* v) { (*value_ptr_)[key] = v; }
+
+  void AddAnnotation(const char* key, int v) { (*value_ptr_)[key] = v; }
+
+  void AddAnnotation(const char* key, uint64_t v) { (*value_ptr_)[key] = v; }
+
+  void AddAnnotation(const char* key, const Json::Value& v) {
+    // std::lock_guard<std::mutex> _safe(this->mlock);
+    (*value_ptr_)[key] = v;
   }
 
-  void AddTraceDetail(const char* key, int v) {
-    std::lock_guard<std::mutex> _safe(this->mlock);
-    this->_value[key] = v;
+  void AppendAnnotation(const char* key, Json::Value&& v) {
+    // std::lock_guard<std::mutex> _safe(this->mlock);
+    (*value_ptr_)[key].append(v);
   }
 
-  void AddTraceDetail(const char* key, uint64_t v) {
-    std::lock_guard<std::mutex> _safe(this->mlock);
-    this->_value[key] = v;
+  void AppendAnnotation(const char* key, Json::Value v) {
+    // std::lock_guard<std::mutex> _safe(this->mlock);
+    (*value_ptr_)[key].append(v);
   }
 
-  void AddTraceDetail(const char* key, const Json::Value& v) {
-    std::lock_guard<std::mutex> _safe(this->mlock);
-    this->_value[key] = v;
-  }
-
-  void appendNodeValue(const char* key, Json::Value v) {
-    std::lock_guard<std::mutex> _safe(this->mlock);
-    this->_value[key].append(v);
-  }
-
-  void appendNodeValue(const char* key, const char* v) {
-    std::lock_guard<std::mutex> _safe(this->mlock);
-    this->_value[key].append(v);
+  void AppendAnnotation(const char* key, const char* v) {
+    // std::lock_guard<std::mutex> _safe(this->mlock);
+    (*value_ptr_)[key].append(v);
   }
 
 public:
-  void setOpt(const char* opt, va_list* args);
-  bool checkOpt();
+  void setNodeUserOption(const char* opt, va_list* args);
+  bool runUserOptionFunc();
 
 private:
-  void parseOpt(std::string key, std::string value);
+  void parseUserOption(std::string key, std::string value);
 
-  void clearAttach();
-
-  void initId(const NodeID& id);
-
-  inline void resetRelative() {
-    this->sibling_id_ = E_INVALID_NODE;
-    this->last_child_id_ = E_INVALID_NODE;
-    this->parent_id_ = E_ROOT_NODE;
-    this->root_id_ = id_;
-    this->_subTraceNodeMaxSize = MAX_SUB_TRACE_NODES_LIMIT;
+private:
+  friend WrapperTraceNodePtr;
+  int addReference() {
+    reference_count_++;
+    return reference_count_.load();
   }
 
-  inline void resetStatus() {
-    this->fetal_error_time = 0;
-    this->root_start_time = 0;
-    this->parent_start_time = 0;
-    this->start_time = 0;
-    this->limit = E_TRACE_PASS;
-    this->cumulative_time = 0;
-    this->set_exp_ = false;
-    error_.set = false;
+  int decReference() {
+    reference_count_--;
+    return reference_count_.load();
   }
 
 public:
-  // changes: expose _lock
-  std::mutex mlock;
-
-public:
-  int addRef() {
-    ref_count_++;
-    return ref_count_.load();
-  }
-
-  int rmRef() {
-    ref_count_--;
-    return ref_count_.load();
-  }
-
-  bool checkZeroRef() { return ref_count_.load() == 0; }
+  bool IsNotReference() { return reference_count_.load() == 0; }
 
 public:
   std::string ToString() {
-    std::lock_guard<std::mutex> _safe(this->mlock);
+    //  TODO
     char pbuf[1024] = {0};
-    int len =
-        snprintf(pbuf, 1024,
-                 "sibling_id_:%d mChildListHeaderId:%d parent_id_:%d root_id_:%d id_:%d \n"
-                 "start_time:%" PRIu64 ",fetal_error_time:%" PRIu64 ",limit:%" PRIu64
-                 ",cumulative_time:%" PRIu64 " \n"
-                 "root_start_time:%" PRIu64 ",set_exp_:%d \n"
-                 "ref_count_:%d \n"
-                 "_value:%s \n"
-                 "context_ size:%zu,_endTraceCallback:%zu \n ",
-                 (int)this->sibling_id_, (int)this->last_child_id_, (int)this->parent_id_,
-                 (int)this->root_id_, (int)this->id_, this->start_time, this->fetal_error_time,
-                 this->limit, this->cumulative_time, this->root_start_time, this->set_exp_,
-                 this->ref_count_.load(), this->_value.toStyledString().c_str(),
-                 this->context_.size(), this->_endTraceCallback.size());
+    int len = snprintf(pbuf, 1024, "TODO ...");
     return std::string(pbuf, len);
   }
 
 private:
-  std::atomic<int> ref_count_;
-  int _subTraceNodeMaxSize;
+  std::atomic<int> reference_count_;
 
 public:
-  // note: not tls, not a force limitation
-  inline void updateRootSubTraceSize() {
-    if (this->_subTraceNodeMaxSize < 0) {
-      throw std::out_of_range("current span reached max sub node limitation");
-    } else {
-      this->_subTraceNodeMaxSize--;
-    }
-  }
-
-public:
-  Json::Value& EncodeProtocol() { return _value; }
+  Value_Ptr moveToSpan() { return std::move(value_ptr_); }
 
 private:
-  Json::Value _value;
-  std::map<std::string, _ContextType_> context_;
-  EndTraceCallBackFuncVec _endTraceCallback;
+  Value_Ptr value_ptr_;
+  std::map<std::string, ContextType_Ptr> context_map_;
+  UserOptionalSettingFunc_Vec user_optional_setting_func_;
 };
 
 class WrapperTraceNodePtr {
@@ -290,14 +270,14 @@ public:
   WrapperTraceNodePtr(WrapperTraceNodePtr& other) = delete;
 
   WrapperTraceNodePtr(WrapperTraceNodePtr&& other) : traceNode_(other.traceNode_) {
-    traceNode_.addRef();
+    traceNode_.addReference();
   }
 
   WrapperTraceNodePtr& operator=(const WrapperTraceNodePtr& other) = delete;
 
-  WrapperTraceNodePtr(TraceNode& node) : traceNode_(node) { traceNode_.addRef(); }
+  WrapperTraceNodePtr(TraceNode& node) : traceNode_(node) { traceNode_.addReference(); }
   TraceNode* operator->() { return &traceNode_; }
-  ~WrapperTraceNodePtr() { traceNode_.rmRef(); }
+  ~WrapperTraceNodePtr() { traceNode_.decReference(); }
 
 private:
   TraceNode& traceNode_;

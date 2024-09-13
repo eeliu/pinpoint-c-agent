@@ -25,70 +25,56 @@
 #include "common.h"
 #include <cassert>
 #include <thread>
-#ifndef UINT32_MAX
-#define UINT32_MAX (0xfffffff)
-#endif
+
 namespace PP {
 namespace NodePool {
-void PoolManager::FreeNodeTree(NodeID nodeId) {
-  if (nodeId == E_INVALID_NODE || nodeId == E_ROOT_NODE) {
+void PoolManager::FreeNodeTree(NodeID root) {
+  if (root == E_INVALID_NODE || root == E_ROOT_NODE) {
     return;
   }
-
-  NodeID child_id, next_id;
-
-  if (ReturnNode(nodeId, child_id, next_id)) {
-    if (next_id != E_INVALID_NODE) {
-      FreeNodeTree(next_id);
-    }
-
-    if (child_id != E_INVALID_NODE) {
-      FreeNodeTree(child_id);
-    }
+  for (NodeID next_id = ReturnNode(root); next_id != E_INVALID_NODE;) {
+    next_id = ReturnNode(next_id);
   }
 }
-bool PoolManager::ReturnNode(NodeID id, NodeID& child_id, NodeID& next_id) {
+NodeID PoolManager::ReturnNode(NodeID id) {
+  NodeID next = E_INVALID_NODE;
   for (int i = 0; i < 1000; i++) {
     // this node was in using: ref is not zero
-    if (this->_restore(id, child_id, next_id, false)) {
-      return true;
+    if (this->returnNode(id, next, false)) {
+      return next;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
   pp_trace("[🐛]Restore node failed:  [%d]; node restore forcefully", id);
-  return this->_restore(id, child_id, next_id, true);
+  this->returnNode(id, next, true);
+  return next;
 }
 
-// avoiding `locking and waiting`
-bool PoolManager::_restore(NodeID id, NodeID& child_id, NodeID& next_id, bool force) {
-  std::lock_guard<std::mutex> _safe(this->_lock);
+bool PoolManager::returnNode(NodeID id, NodeID& next, bool force) {
 
   int32_t index = (int32_t)id - 1;
 
   if (this->indexInUsedVec(index) == false) {
     pp_trace("%d not alive !!!", id);
-    child_id = E_INVALID_NODE;
-    next_id = E_INVALID_NODE;
     return true;
   }
 
   // check refcount
   TraceNode& node = this->getUsedNode(id);
 
-  if (node.checkZeroRef() == false && force == false) {
-    // DO NOT TOUCH THis Node
+  if (node.IsNotReference() == false && force == false) {
+    // DO NOT TOUCH this node
     return false;
   } else {
     this->usedNodeSet_[index] = false;
-    child_id = node.last_child_id_;
-    next_id = node.sibling_id_;
     this->_freeNodeList.push(index);
+    next = node.next_;
     return true;
   }
 }
 
 TraceNode& PoolManager::getUsedNode(NodeID id) {
-  // assert(id != E_INVALID_NODE);
+
   if (id == E_ROOT_NODE) {
     throw std::out_of_range("id should not be 0");
   }
@@ -112,15 +98,7 @@ TraceNode& PoolManager::getReadyNode() noexcept { // create a new node
   int32_t index = this->_freeNodeList.top();
   this->_freeNodeList.pop();
   this->usedNodeSet_[index] = true;
-  return this->nodeIndexVec[index / CELL_SIZE][index % CELL_SIZE].reset(NodeID(index + 1));
-}
-
-TraceNode& PoolManager::_take(NodeID id) {
-  if (id != E_ROOT_NODE) {
-    return this->getUsedNode(id);
-  } else {
-    return this->getReadyNode();
-  }
+  return this->nodeIndexVec[index / CELL_SIZE][index % CELL_SIZE].Reset(NodeID(index + 1));
 }
 
 void PoolManager::expandOnce() {
@@ -138,29 +116,26 @@ void PoolManager::expandOnce() {
   // pp_trace("Node pool expanding is done! news size:%ld", this->nodeIndexVec.size() * CELL_SIZE);
   assert(this->nodeIndexVec.size() * CELL_SIZE == this->usedNodeSet_.size());
 }
-Json::Value empty(Json::nullValue);
-Json::Value& PoolManager::getRootNodeValue(WrapperTraceNodePtr& node) {
 
-  if (node->sibling_id_ != E_INVALID_NODE) {
-    WrapperTraceNodePtr sibling = ReferNode(node->sibling_id_);
-    getRootNodeValue(sibling);
+static Json::Value empty(Json::nullValue);
+
+Value_Ptr PoolManager::EncodeTraceToJsonSpan(WrapperTraceNodePtr& node) {
+  if (node->runUserOptionFunc() == false) {
+    return nullptr;
   }
 
-  if (node->last_child_id_ != E_INVALID_NODE) {
-    WrapperTraceNodePtr child = ReferNode(node->last_child_id_);
-    getRootNodeValue(child);
+  if (!node->IsRootNode()) {
+    pp_trace("current node:%d is not root", node->id_);
+    return nullptr;
   }
 
-  if (node->checkOpt() == false) {
-    return empty;
+  for (NodeID next = node->next_; next != E_INVALID_NODE;) {
+    auto next_node = ReferNode(next);
+    next_node->EndTrace();
+    node->AppendAnnotation("event", *next_node->moveToSpan());
   }
 
-  if (node->parent_id_ > E_ROOT_NODE) {
-    WrapperTraceNodePtr parent = ReferNode(node->parent_id_);
-    parent->appendNodeValue("calls", node->EncodeProtocol());
-  }
-
-  return node->EncodeProtocol();
+  return node->moveToSpan();
 }
 
 } // namespace NodePool

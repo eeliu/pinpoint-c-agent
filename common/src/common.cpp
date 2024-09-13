@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <cstring>
 #include <functional>
+#include <memory>
 #include <stdexcept>
 #include <stdarg.h>
 #include <functional>
@@ -64,6 +65,7 @@ public:
                                         std::placeholders::_2, std::placeholders::_3)}}) {
     statePtr_ = std::unique_ptr<ProcessState>(new ProcessState(trace_limit));
     builder["collectComments"] = false;
+
     pp_trace("init agent:%s timeout:%ld trace_limit:%ld agent_type:%d", cl_host, timeout_ms,
              trace_limit, agent_type_);
   }
@@ -86,9 +88,15 @@ private:
     // if network not ready, span will send in next time.
     connection_pool_.free(trans);
   }
-  void SendSpanTrace(NodeID root, int timeout) {
-    Json::Value& trace = nodePool_.ExpandTraceTreeNodes(root);
-    std::string spanStr = node_tree_to_string(trace);
+
+  void SendSpanTrace(NodeID root_id, int timeout) {
+    WrapperTraceNodePtr root = local_nodePool_.ReferNode(root_id);
+    auto value_ptr = local_nodePool_.EncodeTraceToJsonSpan(root);
+    if (value_ptr == nullptr) {
+      return;
+    }
+
+    std::string spanStr = node_tree_to_string(*value_ptr);
     pp_trace("this span:(%s)", spanStr.c_str());
     TrySendSpan(spanStr, timeout);
     if (unlikely(rawSpanHandler_ != nullptr)) {
@@ -126,80 +134,80 @@ private:
   }
 
 public:
-  NodeID StartTrace(NodeID id, const char* opt = nullptr, va_list* args = nullptr) {
-    if (id <= E_INVALID_NODE) {
+  NodeID StartTrace(NodeID parent_id, const char* opt = nullptr, va_list* args = nullptr) {
+    if (parent_id <= E_INVALID_NODE) {
       throw std::out_of_range("invalid node id");
-    } else if (id == E_ROOT_NODE) {
-      TraceNode& trace = nodePool_.NewNode();
-      trace.StartTimer();
+    } else if (parent_id == E_ROOT_NODE) {
+      TraceNode& trace = local_nodePool_.GetNode();
+      trace.UpgradeToRootNode();
+      trace.StartTrace();
+      // trace.StartTraceWithParent();
       // HACK, set :FT into agent,as only agent knowns.
-      trace.AddTraceDetail(":FT", agent_type_);
+      trace.AddAnnotation(":FT", agent_type_);
       return trace.id_;
     } else {
-      WrapperTraceNodePtr parent = nodePool_.ReferNode(id);
+      WrapperTraceNodePtr parent = local_nodePool_.ReferNode(parent_id);
 
       // get root node
-      WrapperTraceNodePtr root = nodePool_.ReferNode(parent->root_id_);
+      WrapperTraceNodePtr root = local_nodePool_.ReferNode(parent->root_id_);
 
-      // check subnode limit
-      root->updateRootSubTraceSize();
-      // HACK: a new node only exist in one thread
-      TraceNode& new_trace = nodePool_.NewNode();
-      new_trace.StartTimer();
-      parent->AddChildTraceNode(new_trace);
+      TraceNode& trace = local_nodePool_.GetNode();
+      trace.StartTrace();
+      trace.BindParentTrace(parent);
+      local_nodePool_.AppendToRootTrace(root, trace);
       // pass opt
       if (opt != nullptr) {
-        new_trace.setOpt(opt, args);
+        trace.setNodeUserOption(opt, args);
       }
-      return new_trace.id_;
+      return trace.id_;
     }
   }
   NodeID EndTrace(NodeID ID, int timeout = 0) {
     // HACK use cpp scope management
     {
-      WrapperTraceNodePtr w_trace = nodePool_.ReferNode(ID);
+      WrapperTraceNodePtr w_trace = local_nodePool_.ReferNode(ID);
       if (w_trace->IsRootNode()) {
-        if (w_trace->limit & E_TRACE_PASS) {
-          w_trace->EndTimer();
-          w_trace->EndSpan();
+        if (w_trace->GetStatus() == E_TRACE_PASS) {
+          w_trace->EndTrace();
           if (timeout == 0) {
             timeout = span_timeout_;
           }
           SendSpanTrace(ID, timeout);
-        } else if (w_trace->limit & E_TRACE_BLOCK) {
+        } else if (w_trace->GetStatus() == E_TRACE_BLOCK) {
           pp_trace("current [%d] span dropped,due to TRACE_BLOCK", w_trace->getId());
         } else {
-          pp_trace("current [%d] span dropped,due to limit=%" PRIu64 "", w_trace->getId(),
-                   w_trace->limit);
+          pp_trace("current [%d] span dropped,due to limit=%u", w_trace->getId(),
+                   w_trace->GetStatus());
         }
       } else {
-        w_trace->EndTimer();
-        w_trace->EndSpanEvent();
+        w_trace->EndTrace();
         return w_trace->parent_id_;
       }
     }
     // it already is a full trace, every thing is done.
-    nodePool_.FreeNodeTree(ID);
+    local_nodePool_.FreeNodeTree(ID);
     return E_ROOT_NODE;
   }
 
   bool IsRootTrace(NodeID id) {
-    WrapperTraceNodePtr w_node = nodePool_.ReferNode(id);
+    WrapperTraceNodePtr w_node = local_nodePool_.ReferNode(id);
     return w_node->IsRootNode();
   }
+
   uint64_t ChangeTraceStatus(NodeID id, int status) {
-    WrapperTraceNodePtr w_node = nodePool_.ReferNode(id);
-    WrapperTraceNodePtr w_root = nodePool_.ReferNode(w_node->root_id_);
-    pp_trace("change current [%d] status, before:%lld,now:%d", w_root->getId(), w_root->limit,
-             status);
-    w_root->limit = status;
-    return w_root->limit;
+    WrapperTraceNodePtr w_node = local_nodePool_.ReferNode(id);
+    WrapperTraceNodePtr w_root = local_nodePool_.ReferNode(w_node->root_id_);
+    E_AGENT_STATUS older = w_root->GetStatus();
+    pp_trace("change current [%d] status, before:%lld,now:%d", w_root->getId(), older, status);
+    w_root->SetStatus(static_cast<E_AGENT_STATUS>(status));
+    return older;
   }
+
   void AnnotateTrace_V1(NodeID id, const char* key, const char* value, E_NODE_LOC flag) {
     NotInternalKey(key);
 
     WrapperTraceNodePtr w_node = GetWrapperTraceNode(id, flag);
-    w_node->AddTraceDetail(key, value);
+    w_node->AddAnnotation(key, value);
     pp_trace(" [%d] add clue key:%s value:%s", id, key, value);
   }
   void AnnotateTrace_V2(NodeID id, const char* key, const char* value, E_NODE_LOC flag) {
@@ -210,7 +218,7 @@ public:
     cvalue += key;
     cvalue += ':';
     cvalue += value;
-    w_node->appendNodeValue("clues", cvalue.c_str());
+    w_node->AppendAnnotation("clues", cvalue.c_str());
     pp_trace(" [%d] add clues:%s:%s", id, key, value);
   }
   void AnnotateErrorTrace(NodeID id, const char* msg, const char* error_filename,
@@ -220,7 +228,7 @@ public:
     eMsg["msg"] = msg;
     eMsg["file"] = error_filename;
     eMsg["line"] = error_lineno;
-    w_root->AddTraceDetail("ERR", eMsg);
+    w_root->AddAnnotation("ERR", eMsg);
   }
 
   void AnnotateExceptionTrace(NodeID id, const char* exception) {
@@ -232,8 +240,8 @@ public:
     exp["M"] = exception;
     // TODO not support class
     exp["C"] = "class";
-    exp[":S"] = get_unix_time_ms() - w_root->start_time;
-    w_node->AddTraceDetail("EXP_V2", exp);
+    exp[":S"] = get_unix_time_ms() - w_root->trace_start_time_;
+    w_node->AddAnnotation("EXP_V2", exp);
     pp_trace(" [%d] add exp value:%s", id, exception);
   }
 
@@ -265,10 +273,10 @@ public:
   using SpanHandler = void (*)(const char*);
   void RegisterRawSpanHandler(SpanHandler user_handler) { rawSpanHandler_ = user_handler; }
 
-  std::string GetNodePoolStatus() { return nodePool_.Status(); }
+  std::string GetNodePoolStatus() { return local_nodePool_.Status(); }
   void DebugNodeId(NodeID id) {
     try {
-      WrapperTraceNodePtr w_node = nodePool_.ReferNode(id);
+      WrapperTraceNodePtr w_node = local_nodePool_.ReferNode(id);
       fprintf(stderr, "nodeid [%d]: { value:%s }", id, w_node->ToString().c_str());
     } catch (const std::exception& ex) {
       pp_trace(" debug_nodeid: [%d] Reason: %s", id, ex.what());
@@ -288,9 +296,9 @@ private:
   std::string node_tree_to_string(const Json::Value& value) { return _writer.write(value); }
 
   inline WrapperTraceNodePtr GetWrapperTraceNode(NodeID id, E_NODE_LOC flag) {
-    WrapperTraceNodePtr w_node = nodePool_.ReferNode(id);
+    WrapperTraceNodePtr w_node = local_nodePool_.ReferNode(id);
     if (flag == E_LOC_ROOT) {
-      return nodePool_.ReferNode(w_node->root_id_);
+      return local_nodePool_.ReferNode(w_node->root_id_);
     } else {
       return w_node;
     }
@@ -300,17 +308,20 @@ private:
   int span_timeout_;
   int agent_type_;
   ConnectionPool::SpanConnectionPool connection_pool_;
-  NodePool::PoolManager nodePool_;
   StatePtr statePtr_;
   SpanHandler rawSpanHandler_ = {nullptr};
   Json::CharReaderBuilder builder;
+  NodeTreeWriter _writer;
+
+  static thread_local NodePool::PoolManager local_nodePool_;
+  // NodePool::PoolManager local_nodePool_;
 
 public:
   static thread_local NodeID per_thread_current_id;
-  NodeTreeWriter _writer;
 };
 
 thread_local NodeID Agent::per_thread_current_id = E_ROOT_NODE;
+thread_local NodePool::PoolManager Agent::local_nodePool_ = NodePool::PoolManager();
 
 using AgentPtr = std::unique_ptr<Agent>;
 AgentPtr _agentPtr = {nullptr};
@@ -510,7 +521,7 @@ uint64_t change_trace_status(NodeID id, int status) {
     } catch (const std::runtime_error& ex) {
       pp_trace(" %s [%d] failed with %s", __func__, id, ex.what());
     } catch (...) {
-      pp_trace(" %s [%d] failed with unkonw reason", __func__, id);
+      pp_trace(" %s [%d] failed with unknown reason", __func__, id);
     }
   }
   return 0;

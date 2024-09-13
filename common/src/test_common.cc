@@ -1,13 +1,18 @@
 ﻿#include "gtest/gtest.h"
 // #include <locale.h>
 // #include <regex.h>
+
 #include <thread>
 #include <chrono>
 #include "common.h"
 #include "json/value.h"
+#include "json/reader.h"
+#include "header.h"
 
 using namespace testing;
 std::string ouputMsg;
+namespace Json = AliasJson;
+
 void cc_log_error_cb(const char* msg) { ouputMsg = msg; }
 
 TEST(common, uid_all_in_one) {
@@ -187,4 +192,122 @@ TEST(common, none_utf8) {
   AliasJson::Value value;
   value["a"] = "ä\xA9ü";
   pp_trace("%s ", value.toStyledString().c_str());
+}
+
+static std::string span;
+static void capture(const char* msg) {
+  pp_trace("capture:%s", msg);
+  span = std::string(msg);
+}
+
+//./bin/TestCommon --gtest_filter=node.pinpoint_start_traceV1
+TEST(common, pinpoint_start_traceV1) {
+  pinpoint_set_agent("tcp:127.0.0.1:9999", 0, -1, 7000);
+  register_span_handler(capture);
+  NodeID root, child1;
+  root = pinpoint_start_trace(E_ROOT_NODE);
+  child1 = pinpoint_start_traceV1(root, "TraceMinTimeMs:23", nullptr);
+  pinpoint_add_clue(child1, "name", "Take1sec", E_LOC_CURRENT);
+  sleep(1);
+  pinpoint_end_trace(child1);
+  check_trace_limit(-1);
+  check_trace_limit(0);
+  check_trace_limit(time(nullptr));
+  child1 = pinpoint_start_traceV1(root, "TraceOnlyException", nullptr);
+  pinpoint_add_clue(child1, "name", "Exception", E_LOC_CURRENT);
+  pinpoint_add_exception(child1, "xxxxxxxxx");
+  pinpoint_end_trace(child1);
+
+  child1 = pinpoint_start_traceV1(root, "TraceMinTimeMs:2000", nullptr);
+  pinpoint_add_clue(child1, "name", "TraceMinTimeMs:2000", E_LOC_CURRENT);
+  sleep(1);
+
+  {
+    NodeID child = pinpoint_start_traceV1(child1, "TraceMinTimeMs:23", nullptr);
+    pinpoint_add_clue(child1, "name", "childFromTraceMinTimeMs:23-1", E_LOC_CURRENT);
+    pinpoint_end_trace(child);
+    child = pinpoint_start_traceV1(child1, "TraceMinTimeMs:23", nullptr);
+    pinpoint_add_clue(child1, "name", "childFromTraceMinTimeMs:23-2", E_LOC_CURRENT);
+    pinpoint_end_trace(child);
+    child = pinpoint_start_traceV1(child1, "TraceMinTimeMs:23", nullptr);
+    pinpoint_add_clue(child1, "name", "childFromTraceMinTimeMs:23-3", E_LOC_CURRENT);
+    pinpoint_end_trace(child);
+  }
+
+  pinpoint_end_trace(child1);
+
+  child1 = pinpoint_start_traceV1(root, "TraceOnlyException", nullptr);
+  pinpoint_add_clue(child1, "name", "NoException", E_LOC_CURRENT);
+  pinpoint_end_trace(child1);
+
+  child1 = pinpoint_start_traceV1(root, "TraceMinTimeMs:-23", nullptr);
+  pinpoint_add_clue(child1, "name", "TraceMinTimeMs:-23", E_LOC_CURRENT);
+  pinpoint_end_trace(child1);
+
+  pinpoint_end_trace(root);
+  pp_trace("span:%s", span.c_str());
+  EXPECT_TRUE(span.length() > 0);
+  EXPECT_TRUE(span.find("Take1sec") != span.npos);
+  EXPECT_TRUE(span.find("Exception") != span.npos);
+  EXPECT_TRUE(span.find("TraceMinTimeMs:2000") == span.npos);
+  EXPECT_TRUE(span.find("NoException") == span.npos);
+
+  EXPECT_TRUE(span.find("childFromTraceMinTimeMs:23-3") == span.npos);
+  EXPECT_TRUE(span.find("childFromTraceMinTimeMs:23-2") == span.npos);
+}
+
+std::set<std::string> removed_keys = {":E", ":S"};
+void Remove(Json::Value& v) {
+  Json::Value::Members mem = v.getMemberNames();
+  for (auto iter = mem.begin(); iter != mem.end(); iter++) {
+    if (removed_keys.find(*iter) != removed_keys.end()) {
+      v.removeMember(*iter);
+    }
+
+    if (*iter == "calls") {
+      for (long i = 0; i < v[*iter].size(); i++) {
+        Remove(v["calls"][(int)i]);
+      }
+    }
+  }
+
+  return;
+}
+
+static bool check_span_order(std::string& i1, std::string& i2) {
+  Json::Value v_i1, v_i2;
+  Json::Reader reader;
+  reader.parse(i1, v_i1, false);
+  reader.parse(i2, v_i2, false);
+  Remove(v_i1);
+  Remove(v_i2);
+  pp_trace("%s", v_i1.toStyledString().c_str());
+  pp_trace("%s", v_i2.toStyledString().c_str());
+  return v_i1.toStyledString() == v_i2.toStyledString();
+}
+
+TEST(node, call_order) {
+  register_span_handler(capture);
+  NodeID root, child1, child2;
+  root = pinpoint_start_trace(E_ROOT_NODE);
+  pinpoint_add_clue(root, "name:", "root", E_LOC_CURRENT);
+  child1 = pinpoint_start_trace(root);
+  pinpoint_add_clue(child1, "name:", "child1", E_LOC_CURRENT);
+  child2 = pinpoint_start_trace(child1);
+  pinpoint_add_clue(child2, "name:", "child2", E_LOC_CURRENT);
+  child2 = pinpoint_start_trace(child1);
+  pinpoint_add_clue(child2, "name:", "child3", E_LOC_CURRENT);
+  pinpoint_end_trace(child2);
+  child2 = pinpoint_start_trace(child1);
+  pinpoint_add_clue(child2, "name:", "child4", E_LOC_CURRENT);
+  pinpoint_end_trace(child2);
+  child2 = pinpoint_start_trace(child1);
+  pinpoint_add_clue(child2, "name:", "child5", E_LOC_CURRENT);
+  pinpoint_end_trace(child2);
+  pinpoint_end_trace(child1);
+  pinpoint_end_trace(root);
+
+  std::string exp =
+      R"({":E":0,":FT":7000,":S":1710408777521,"calls":[{":E":0,":S":0,"calls":[{"name:":"child2"},{":E":0,":S":0,"name:":"child3"},{":E":0,":S":0,"name:":"child4"},{":E":0,":S":0,"name:":"child5"}],"name:":"child1"}],"name:":"root"})";
+  EXPECT_TRUE(check_span_order(span, exp));
 }
