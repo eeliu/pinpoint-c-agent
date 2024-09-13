@@ -96,7 +96,7 @@ func TestTspan(t *testing.T) {
 		t.Error("no error info")
 	}
 
-	if len(tspan.Calls) == 0 {
+	if len(tspan.Follows) == 0 {
 		t.Error("no calls")
 	}
 

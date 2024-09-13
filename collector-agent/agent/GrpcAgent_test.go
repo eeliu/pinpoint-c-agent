@@ -35,7 +35,7 @@ func Test_async_call_map(t *testing.T) {
 	tid := fmt.Sprintf("cd.dev.test.ci^%d^%d", startTime, 1)
 
 	span := &TSpan{AppServerType: 1500, AppServerTypeV2: 1500, StartTimeV2: startTime, ElapsedTime: 100, ElapsedTimeV2: 103, AppId: "cd.dev.test.ci", AppIdV2: "cd.dev.test.ci", AppName: "cd.dev.test", AppNameV2: "cd.dev.test", SpanName: "test-ci-main", SpanId: 454525, ServerType: 1500, TransactionId: tid, Uri: "/", RemoteAddr: "15.36.89.23", EndPoint: "localhost:5265",
-		Calls: []*TSpanEvent{
+		Follows: []*TSpanEvent{
 			{
 				Name:        "test-1",
 				Sequence:    0,
@@ -47,19 +47,19 @@ func Test_async_call_map(t *testing.T) {
 			},
 			{
 				Name:         "test-3",
-				Sequence:     1,
+				Sequence:     2,
 				Depth:        2,
 				ServiceType:  1501,
-				AsyId:        2,
+				AsyId:        2578,
 				StartElapsed: int32(time.Now().UTC().UnixMicro()) + 30,
 				EndElapsed:   20,
 			},
 			{
 				Name:         "test-2",
-				Sequence:     2,
+				Sequence:     1,
 				Depth:        2,
 				ServiceType:  1501,
-				AsyId:        1,
+				AsyId:        1589,
 				StartElapsed: int32(time.Now().UTC().UnixMicro()) + 30,
 				EndElapsed:   20,
 			}},
@@ -71,8 +71,8 @@ func Test_async_call_map(t *testing.T) {
 		StartTime:     startTime + 7898,
 		AppServerType: 1500,
 		EndPoint:      "localhost:5265",
-		LocalAsyncId:  &TAsyncId{AsyncId: 1, Sequence: 2},
-		Calls: []*TSpanEvent{
+		LocalAsyncId:  &TAsyncId{AsyncId: 1589, Sequence: 2},
+		Follows: []*TSpanEvent{
 			{
 				Name:        "thread_func",
 				Depth:       1,
@@ -95,8 +95,8 @@ func Test_async_call_map(t *testing.T) {
 		StartTime:     startTime + 7898,
 		AppServerType: 1500,
 		EndPoint:      "localhost:5265",
-		LocalAsyncId:  &TAsyncId{AsyncId: 2, Sequence: 1},
-		Calls: []*TSpanEvent{
+		LocalAsyncId:  &TAsyncId{AsyncId: 2578, Sequence: 1},
+		Follows: []*TSpanEvent{
 			{
 				Name:        "thread_fun_01",
 				Depth:       1,
@@ -114,11 +114,12 @@ func Test_async_call_map(t *testing.T) {
 	}
 
 	agent.SendSpan(chunk)
-	agent.SendSpan(chunk2)
 	agent.SendSpan(span)
 
 	t.Log("sleep 10sec")
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
+	agent.SendSpan(chunk2)
+	time.Sleep(5 * time.Second)
 	agent.Stop()
-	t.Error("---")
+	// t.Error("---")
 }

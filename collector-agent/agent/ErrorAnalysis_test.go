@@ -26,7 +26,7 @@ func TestErrorAnalysisFilter_Interceptor(t *testing.T) {
 		{
 			ErrorMarked:   1,
 			ExceptionInfo: "abc",
-			Calls: []*TSpanEvent{
+			Follows: []*TSpanEvent{
 				{
 					ExceptionInfo: "abc",
 				},
@@ -38,7 +38,7 @@ func TestErrorAnalysisFilter_Interceptor(t *testing.T) {
 		{
 			ErrorMarked:   0,
 			ExceptionInfo: "abc",
-			Calls: []*TSpanEvent{
+			Follows: []*TSpanEvent{
 				{
 					ExceptionInfo: "abc",
 				},

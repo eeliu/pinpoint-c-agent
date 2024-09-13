@@ -108,8 +108,8 @@ type TSpan struct {
 	AppIdV2               string          `json:":appid"`
 	AppName               string          `json:"appname"`
 	AppNameV2             string          `json:":appname"`
-	Calls                 []*TSpanEvent   `json:"calls"`
-	Clues                 []string        `json:"clues,omitempty"`
+	Follows               []*TSpanEvent   `json:"event"`
+	Annotations           []string        `json:"anno,omitempty"`
 	SpanName              string          `json:"name"`
 	SpanId                int64           `json:"sid,string"`
 	ServerType            int32           `json:"stp,string"`

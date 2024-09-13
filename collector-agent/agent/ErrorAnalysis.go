@@ -107,9 +107,9 @@ func (e *ErrorAnalysisFilter) scanTSpanTree(span *TSpan) *v1.PExceptionMetaData 
 			StartTime:          span.ExceptionInfoV2.StartTime + startTime,
 		}
 		spanExp = append(spanExp, exp)
-		e.parseException(span.Calls, &spanExp, exp.ExceptionId, depth, span.ExceptionInfoV2, startTime)
+		e.parseException(span.Follows, &spanExp, exp.ExceptionId, depth, span.ExceptionInfoV2, startTime)
 	} else {
-		e.parseException(span.Calls, &spanExp, 0, depth, nil, startTime)
+		e.parseException(span.Follows, &spanExp, 0, depth, nil, startTime)
 	}
 
 	e_md.Exceptions = spanExp

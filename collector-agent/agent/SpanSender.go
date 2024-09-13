@@ -284,7 +284,7 @@ func (spanSender *SpanSender) makePinpointSpan(span *TSpan) (*v1.PSpan, error) {
 		}
 	}
 
-	for _, annotation := range span.Clues {
+	for _, annotation := range span.Annotations {
 		iColon := strings.Index(annotation, ":")
 		if iColon > 0 {
 			if value, err := strconv.ParseInt(annotation[0:iColon], 10, 32); err == nil {
@@ -371,7 +371,7 @@ func (spanSender *SpanSender) makePinpointSpan(span *TSpan) (*v1.PSpan, error) {
 func (spanSender *SpanSender) makeSpanOrSpanChunk(span *TSpan) (*v1.PSpan, *v1.PSpanChunk, error) {
 
 	var spanEv []*v1.PSpanEvent
-	for _, call := range span.Calls {
+	for _, call := range span.Follows {
 		spanEv = append(spanEv, spanSender.makeSpanEvent(call))
 	}
 
