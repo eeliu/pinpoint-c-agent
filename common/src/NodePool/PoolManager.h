@@ -32,15 +32,13 @@ class PoolManager {
 private:
   TraceNode& getUsedNode(NodeID id);
 
-  TraceNode& getReadyNode(void) noexcept;
-
-  TraceNode& _take(NodeID id);
+  TraceNode& getReadyNode(void);
 
 protected:
   virtual bool returnNode(NodeID id, NodeID& next, bool force);
 
 public:
-  Value_Ptr EncodeTraceToJsonSpan(WrapperTraceNodePtr& node);
+  const Json::Value& EncodeTraceToJsonSpan(WrapperTraceNodePtr& node);
 
   virtual TraceNode& GetNode() { return this->getReadyNode(); }
 
@@ -49,18 +47,22 @@ public:
     return WrapperTraceNodePtr(e);
   }
 
-  void AppendToRootTrace(WrapperTraceNodePtr& root, TraceNode& newNode) {
-    NodeID last = root->GetLastNode();
-    WrapperTraceNodePtr lastNode = ReferNode(last);
-    lastNode->next_ = newNode.id_;
-    root->SetLastNode(newNode.id_);
-  }
+  void AppendToRootTrace(WrapperTraceNodePtr& root, TraceNode& newNode);
 
   NodeID ReturnNode(NodeID id);
 
   virtual uint32_t totalNodesCount() { return (uint32_t)nodeIndexVec.size() * CELL_SIZE; }
 
   virtual uint32_t freeNodesCount() { return (uint32_t)this->_freeNodeList.size(); }
+
+  bool NoNodesLeak() {
+    if (freeNodesCount() == totalNodesCount()) {
+      return true;
+    } else {
+      pp_trace("pool status: free:%u total:%u", freeNodesCount(), totalNodesCount());
+      return false;
+    }
+  }
 
   virtual void foreachAliveNode(std::function<void(TraceNode& node)> func) {
     for (int32_t index = 0; index < this->maxId; index++) {
@@ -117,6 +119,7 @@ private:
   int32_t maxId;
   std::stack<int32_t> _freeNodeList;
   static const int CELL_SIZE = 128;
+  static const int POOL_MAX_NODES_LIMIT = CELL_SIZE * 100;
   std::vector<std::unique_ptr<TraceNode[]>> nodeIndexVec;
 };
 

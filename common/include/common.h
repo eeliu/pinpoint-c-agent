@@ -74,7 +74,7 @@ static const NodeID E_ROOT_NODE = 0;
 static const E_NODE_LOC E_LOC_CURRENT = 0x0;
 static const E_NODE_LOC E_LOC_ROOT = 0x1;
 
-#define PINPOINT_C_AGENT_API_VERSION "0.5.3"
+#define PINPOINT_C_AGENT_API_VERSION "0.6.0"
 
 /**
  * @brief change logs
@@ -192,12 +192,12 @@ void pinpoint_set_context_key(NodeID _id, const char* key, const char* value);
 void pinpoint_set_async_ctx(NodeID id, int32_t async_node_id, int32_t node_sequence);
 
 /**
- * @brief [tls] get sequence id from trace(NodeID= id)
+ * @brief [tls] get sequence id from trace node(NodeID= id); root node, sequence id is 0
  *
  * @param id
  * @return int32_t if < 0, must have an error.(eg: NodeID not exist)
  */
-int32_t pinpoint_get_sequence(NodeID id);
+int32_t pinpoint_get_sequence_id(NodeID id);
 
 /**
  * @brief get string context

@@ -44,8 +44,8 @@ func CreateAgentRouter(config *common.Config) *AgentRouter {
 
 type TSpanEvent struct {
 	Name            string          `json:"name"`
-	Sequence        int32           `json:"seq"`
-	Depth           int32           `json:"depth"`
+	Sequence        int32           `json:":seq"`
+	Depth           int32           `json:":depth"`
 	ExceptionInfo   string          `json:"EXP,omitempty"`
 	ExceptionInfoV2 *TExceptionInfo `json:"EXP_V2,omitempty"`
 	DestinationId   string          `json:"dst,omitempty"`
@@ -135,7 +135,7 @@ func (span *TSpan) IsFailed() bool {
 	return false
 }
 
-//note
+// note
 // FindHistogramLevel must come with histogramSize
 func (span *TSpan) FindHistogramLevel() int {
 	if span.GetElapsedTime() <= 100 {

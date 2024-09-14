@@ -112,7 +112,7 @@ TEST(util, mergeTraceNodeTree_1) {
   EXPECT_TRUE(span.find("id1") != span.npos);
   EXPECT_TRUE(span.find("id2") != span.npos);
   EXPECT_TRUE(span.find("id3") != span.npos);
-  EXPECT_TRUE(span.find("calls") != span.npos);
+  EXPECT_TRUE(span.find("event") != span.npos);
 }
 
 TEST(util, logger) {

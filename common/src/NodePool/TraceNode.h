@@ -48,19 +48,17 @@ using Context::StringContextType;
 class WrapperTraceNodePtr;
 const static int MAX_SUB_TRACE_NODES_LIMIT = 2048;
 typedef std::shared_ptr<ContextType> ContextType_Ptr;
-// protect value by unique, it's friendly to json::value append
-using Value_Ptr = std::unique_ptr<Json::Value>;
 
 using UserOptionalSettingFunc = std::function<bool()>;
 using UserOptionalSettingFunc_Vec = std::vector<UserOptionalSettingFunc>;
 class WrapperTraceNodePtr;
+using Root_Lock_t = std::mutex;
 class TraceNode {
 
 private:
-  using Lock_t = std::mutex;
   using ContextMap_t = std::map<std::string, ContextType_Ptr>;
   struct RootTraceNodeExtra {
-    Lock_t lock;
+    Root_Lock_t lock;
     NodeID last;
     NodeID next;
     // uint64_t fellows_limit;
@@ -74,46 +72,33 @@ private:
       sequence = 0;
     }
     ~RootTraceNodeExtra() { context_map.clear(); }
-    int32_t createNewSequence() {
-      sequence++;
-      return sequence.load();
-    }
+    int32_t createNewSequence() { return sequence++; }
   };
 
   std::unique_ptr<RootTraceNodeExtra> root_node_extra_ptr_ = {nullptr};
 
 public:
-  void UpgradeToRootNode() {
+  Root_Lock_t& GetRootLock() { return root_node_extra_ptr_->lock; }
+
+  void UpgradeToRootNode(int agent_type) {
     root_node_extra_ptr_ = std::unique_ptr<RootTraceNodeExtra>(new RootTraceNodeExtra());
+    root_id_ = id_;
+    parent_id_ = id_;
+    next_ = E_INVALID_NODE;
+    depth_ = 0;
+    sequence_ = 0;
+    AddAnnotation(":FT", agent_type);
   }
 
-  int32_t CreateNewSequence() {
-    return root_node_extra_ptr_ ? root_node_extra_ptr_->createNewSequence() : -1;
-  }
+  int32_t CreateNewSequence() { return root_node_extra_ptr_->createNewSequence(); }
 
-  NodeID GetLastNode() {
-    return root_node_extra_ptr_ ? root_node_extra_ptr_->last : E_INVALID_NODE;
-  }
+  NodeID GetLastNode() { return root_node_extra_ptr_->last; }
 
-  void SetLastNode(NodeID last) {
-    if (root_node_extra_ptr_) {
-      root_node_extra_ptr_->last = last;
-    }
-  }
+  void SetLastNode(NodeID last) { root_node_extra_ptr_->last = last; }
 
-  void SetStatus(E_AGENT_STATUS status) {
-    if (root_node_extra_ptr_) {
-      root_node_extra_ptr_->status = status;
-    }
-  }
+  void SetStatus(E_AGENT_STATUS status) { root_node_extra_ptr_->status = status; }
 
-  E_AGENT_STATUS GetStatus() {
-    if (root_node_extra_ptr_) {
-      return root_node_extra_ptr_->status;
-    } else {
-      return E_AGENT_INTERNAL_ERROR;
-    }
-  }
+  E_AGENT_STATUS GetStatus() { return root_node_extra_ptr_->status; }
 
 public:
   NodeID root_id_ = {E_INVALID_NODE};
@@ -133,7 +118,8 @@ public:
 public:
   void StartTrace();
 
-  void BindParentTrace(WrapperTraceNodePtr&);
+  void BindParentTrace(WrapperTraceNodePtr& node_ptr);
+  void BindParentTrace(TraceNode&);
 
   void EndTrace();
 
@@ -195,31 +181,17 @@ public:
   }
 
 public:
-  void AddAnnotation(const char* key, const char* v) { (*value_ptr_)[key] = v; }
+  void AddAnnotation(const char* key, const char* v) { value_[key] = v; }
 
-  void AddAnnotation(const char* key, int v) { (*value_ptr_)[key] = v; }
+  void AddAnnotation(const char* key, int v) { value_[key] = v; }
 
-  void AddAnnotation(const char* key, uint64_t v) { (*value_ptr_)[key] = v; }
+  void AddAnnotation(const char* key, uint64_t v) { value_[key] = v; }
 
-  void AddAnnotation(const char* key, const Json::Value& v) {
-    // std::lock_guard<std::mutex> _safe(this->mlock);
-    (*value_ptr_)[key] = v;
-  }
+  void AddAnnotation(const char* key, const Json::Value& v) { value_[key] = v; }
 
-  void AppendAnnotation(const char* key, Json::Value&& v) {
-    // std::lock_guard<std::mutex> _safe(this->mlock);
-    (*value_ptr_)[key].append(v);
-  }
+  void AppendAnnotation(const char* key, Json::Value&& v) { value_[key].append(v); }
 
-  void AppendAnnotation(const char* key, Json::Value v) {
-    // std::lock_guard<std::mutex> _safe(this->mlock);
-    (*value_ptr_)[key].append(v);
-  }
-
-  void AppendAnnotation(const char* key, const char* v) {
-    // std::lock_guard<std::mutex> _safe(this->mlock);
-    (*value_ptr_)[key].append(v);
-  }
+  void AppendAnnotation(const char* key, const char* v) { value_[key].append(v); }
 
 public:
   void setNodeUserOption(const char* opt, va_list* args);
@@ -251,16 +223,25 @@ public:
     return std::string(pbuf, len);
   }
 
+  const Json::Value& GetConstValue() { return value_; }
+
 private:
   std::atomic<int> reference_count_;
 
 public:
-  Value_Ptr moveToSpan() { return std::move(value_ptr_); }
+  Json::Value&& moveToSpan() { return std::move(value_); }
 
 private:
-  Value_Ptr value_ptr_;
+  Json::Value value_;
   std::map<std::string, ContextType_Ptr> context_map_;
   UserOptionalSettingFunc_Vec user_optional_setting_func_;
+
+private:
+  bool skipped_ = {false};
+
+public:
+  bool ShouldSkip() { return skipped_; }
+  void SkipByParent() { skipped_ = true; }
 };
 
 class WrapperTraceNodePtr {
@@ -277,6 +258,7 @@ public:
 
   WrapperTraceNodePtr(TraceNode& node) : traceNode_(node) { traceNode_.addReference(); }
   TraceNode* operator->() { return &traceNode_; }
+  TraceNode& operator*() { return traceNode_; }
   ~WrapperTraceNodePtr() { traceNode_.decReference(); }
 
 private:

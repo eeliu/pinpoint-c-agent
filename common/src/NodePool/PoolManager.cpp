@@ -23,8 +23,11 @@
 #include "PoolManager.h"
 
 #include "common.h"
+#include "json/value.h"
 #include <cassert>
+#include <stdexcept>
 #include <thread>
+#include <utility>
 
 namespace PP {
 namespace NodePool {
@@ -36,6 +39,31 @@ void PoolManager::FreeNodeTree(NodeID root) {
     next_id = ReturnNode(next_id);
   }
 }
+
+void PoolManager::AppendToRootTrace(WrapperTraceNodePtr& root, TraceNode& newNode) {
+  std::lock_guard<std::mutex> _safe(root->GetRootLock());
+
+  if (newNode.root_id_ != E_INVALID_NODE) {
+    return;
+  }
+
+  newNode.root_id_ = root->id_;
+
+  NodeID last = root->GetLastNode();
+  if (last != E_INVALID_NODE) {
+    WrapperTraceNodePtr lastNode = ReferNode(last);
+    lastNode->next_ = newNode.id_;
+  }
+
+  root->SetLastNode(newNode.id_);
+
+  newNode.sequence_ = root->CreateNewSequence();
+
+  if (root->next_ == E_INVALID_NODE) {
+    root->next_ = newNode.id_;
+  }
+}
+
 NodeID PoolManager::ReturnNode(NodeID id) {
   NodeID next = E_INVALID_NODE;
   for (int i = 0; i < 1000; i++) {
@@ -69,6 +97,8 @@ bool PoolManager::returnNode(NodeID id, NodeID& next, bool force) {
     this->usedNodeSet_[index] = false;
     this->_freeNodeList.push(index);
     next = node.next_;
+    // xxx disable for CI
+    // pp_trace("returnNode node:%d next:%d", id, next);
     return true;
   }
 }
@@ -90,8 +120,12 @@ TraceNode& PoolManager::getUsedNode(NodeID id) {
   return this->nodeIndexVec[index / CELL_SIZE][index % CELL_SIZE];
 }
 
-TraceNode& PoolManager::getReadyNode() noexcept { // create a new node
+TraceNode& PoolManager::getReadyNode() { // create a new node
+
   if (this->_freeNodeList.empty()) {
+    if (maxId > POOL_MAX_NODES_LIMIT) {
+      throw std::out_of_range("node poll size limitation reached");
+    }
     this->expandOnce();
   }
   // as it holds a _lock, so no more _freeNodeList is empty
@@ -117,25 +151,34 @@ void PoolManager::expandOnce() {
   assert(this->nodeIndexVec.size() * CELL_SIZE == this->usedNodeSet_.size());
 }
 
-static Json::Value empty(Json::nullValue);
+const Json::Value& PoolManager::EncodeTraceToJsonSpan(WrapperTraceNodePtr& root_node) {
 
-Value_Ptr PoolManager::EncodeTraceToJsonSpan(WrapperTraceNodePtr& node) {
-  if (node->runUserOptionFunc() == false) {
-    return nullptr;
+  if (!root_node->IsRootNode()) {
+    pp_trace("current node:%d is not root", root_node->id_);
+    return root_node->GetConstValue();
   }
 
-  if (!node->IsRootNode()) {
-    pp_trace("current node:%d is not root", node->id_);
-    return nullptr;
-  }
-
-  for (NodeID next = node->next_; next != E_INVALID_NODE;) {
+  for (NodeID next = root_node->next_; next != E_INVALID_NODE;) {
     auto next_node = ReferNode(next);
-    next_node->EndTrace();
-    node->AppendAnnotation("event", *next_node->moveToSpan());
+    auto parent_node = ReferNode(next_node->parent_id_);
+    next = next_node->next_;
+
+    // XXX: if no expired_time, try to end it
+    if (next_node->expired_time == 0) {
+      next_node->EndTrace();
+    }
+    // [x] add skipped
+    // if (next_node->ShouldSkip() || parent_node->ShouldSkip()) {
+    //   next_node->SkipByParent();
+    //   continue;
+    // }
+
+    root_node->AppendAnnotation("event", next_node->moveToSpan());
   }
 
-  return node->moveToSpan();
+  root_node->runUserOptionFunc();
+
+  return root_node->GetConstValue();
 }
 
 } // namespace NodePool

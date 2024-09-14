@@ -32,20 +32,17 @@ namespace NodePool {
 
 TraceNode& TraceNode::Reset(NodeID id) {
   id_ = id;
-
   root_id_ = parent_id_ = next_ = E_INVALID_NODE;
 
   parent_start_time_ = 0;
   trace_start_time_ = 0;
-
+  expired_time = 0;
   reference_count_ = 0;
   root_node_extra_ptr_ = nullptr;
 
   if (!this->user_optional_setting_func_.empty()) {
     this->user_optional_setting_func_.clear();
   }
-
-  value_ptr_ = std::unique_ptr<Json::Value>(new Json::Value());
 
   return *this;
 }
@@ -62,13 +59,19 @@ void TraceNode::EndTrace() {
   if (this->set_exp_) {
     this->AddAnnotation("EA", 1);
   }
+
+  if (root_node_extra_ptr_ == nullptr) { // not root(SpanEvent)
+    AddAnnotation(":seq", sequence_);
+    AddAnnotation(":depth", depth_);
+  }
 }
 
-void TraceNode::BindParentTrace(WrapperTraceNodePtr& parent) {
-  parent_start_time_ = parent->trace_start_time_;
-  parent_id_ = parent->id_;
-  depth_ = parent->depth_ + 1;
-  root_id_ = parent->root_id_;
+void TraceNode::BindParentTrace(WrapperTraceNodePtr& parent_ptr) { BindParentTrace(*parent_ptr); }
+
+void TraceNode::BindParentTrace(TraceNode& parent) {
+  parent_start_time_ = parent.trace_start_time_;
+  parent_id_ = parent.id_;
+  depth_ = parent.depth_ + 1;
 }
 
 void TraceNode::parseUserOption(std::string key, std::string value) {
@@ -76,18 +79,22 @@ void TraceNode::parseUserOption(std::string key, std::string value) {
   if (key == "TraceMinTimeMs") {
     int64_t min = std::stoll(value);
     auto cb = [=]() -> bool {
-      pp_trace("checkOpt:  [%d] TraceMinTimeMs:%" PRIu64 " cumulative_time:%" PRIu64 "", this->id_,
-               min, this->expired_time);
       if ((int64_t)this->expired_time >= min) {
         return true;
       } else {
+        pp_trace("node:$d skipped due to `TraceMinTimeMs`", id_);
+        this->skipped_ = true;
         return false;
       }
     };
 
     this->user_optional_setting_func_.push_back(cb);
   } else if (key == "TraceOnlyException") {
-    auto cb = [=]() -> bool { return this->set_exp_; };
+    auto cb = [=]() -> bool {
+      pp_trace("node:$d skipped due to  `TraceOnlyException`", id_);
+      this->skipped_ = !this->set_exp_;
+      return this->set_exp_;
+    };
 
     this->user_optional_setting_func_.push_back(cb);
   }

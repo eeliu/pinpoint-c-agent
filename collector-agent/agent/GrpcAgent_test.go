@@ -121,5 +121,5 @@ func Test_async_call_map(t *testing.T) {
 	agent.SendSpan(chunk2)
 	time.Sleep(5 * time.Second)
 	agent.Stop()
-	// t.Error("---")
+	t.Error("---")
 }

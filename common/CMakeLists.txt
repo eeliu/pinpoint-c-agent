@@ -35,7 +35,7 @@ endif(CMAKE_COMPILER_IS_GNUCXX)
 add_subdirectory(jsoncpp)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include)                
-
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/common.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/common.h @ONLY)
 if (WITH_TEST_CASE)
     include (CTest)
     enable_testing()
