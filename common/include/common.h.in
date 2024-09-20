@@ -32,14 +32,6 @@
 static const int RECONNECT_TIME_SEC = 5;
 typedef enum { RESPONSE_AGENT_INFO = 0, REQ_UPDATE_SPAN = 1 } MSG_TYPE;
 
-typedef enum {
-  E_LOGGING = 0x1,
-  E_DISABLE_GIL = 0x2, // disable gil checking in python
-  // if set this mode, all span must be send immediately
-  // mostly used in some batch script,data loading, data migration
-  // E_NO_SPAN_WAIT = 0x4,
-} E_AGENT_MODE;
-
 #pragma pack(1)
 typedef struct {
   uint32_t type;

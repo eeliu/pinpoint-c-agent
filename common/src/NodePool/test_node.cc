@@ -32,12 +32,12 @@ TEST(NodePool, opt) {
 
   test_opt(node, "TraceMinTimeMs:23", "TraceOnlyException", nullptr);
 
-  node.expired_time = 22;
+  node.expired_time_ = 22;
   EXPECT_FALSE(node.runUserOptionFunc());
-  node.expired_time = 23;
+  node.expired_time_ = 23;
   EXPECT_TRUE(node.runUserOptionFunc());
 
-  node.expired_time = 0;
+  node.expired_time_ = 0;
   node.set_exp_ = true;
   EXPECT_TRUE(node.runUserOptionFunc());
   node.set_exp_ = false;

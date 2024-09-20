@@ -198,17 +198,13 @@ size_t TransLayer::PoolEventOnce(uint32_t timeout) {
   FD_ZERO(&wfds);
   FD_ZERO(&rfds);
 
-  // if (this->_state & S_ERROR) {
   FD_SET(fd, &efds);
-  // }
 
   if (this->_state & S_WRITING) {
     FD_SET(fd, &wfds);
   }
 
-  // if (this->_state & S_READING) {
   FD_SET(fd, &rfds);
-  // }
 
   struct timeval tv = {timeout / 1000, (int)timeout % 1000};
 

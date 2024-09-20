@@ -260,7 +260,7 @@ TEST(common, pinpoint_start_traceV1) {
 }
 
 std::set<std::string> removed_keys = {":E", ":S"};
-void Remove(Json::Value& v) {
+static void removeKeys(Json::Value& v) {
   Json::Value::Members mem = v.getMemberNames();
   for (auto iter = mem.begin(); iter != mem.end(); iter++) {
     if (removed_keys.find(*iter) != removed_keys.end()) {
@@ -269,7 +269,7 @@ void Remove(Json::Value& v) {
 
     if (*iter == "calls") {
       for (long i = 0; i < v[*iter].size(); i++) {
-        Remove(v["calls"][(int)i]);
+        removeKeys(v["calls"][(int)i]);
       }
     }
   }
@@ -280,16 +280,17 @@ void Remove(Json::Value& v) {
 static bool check_span_order(std::string& i1, std::string& i2) {
   Json::Value v_i1, v_i2;
   Json::Reader reader;
-  reader.parse(i1, v_i1, false);
-  reader.parse(i2, v_i2, false);
-  Remove(v_i1);
-  Remove(v_i2);
-  pp_trace("%s", v_i1.toStyledString().c_str());
-  pp_trace("%s", v_i2.toStyledString().c_str());
+  reader.parse(i1, v_i1, true);
+  reader.parse(i2, v_i2, true);
+  removeKeys(v_i1);
+  removeKeys(v_i2);
+  pp_trace("v_i1\r\n%s", v_i1.toStyledString().c_str());
+  pp_trace("v_i2\r\n%s", v_i2.toStyledString().c_str());
   return v_i1.toStyledString() == v_i2.toStyledString();
 }
 
 TEST(common, call_order) {
+  span.clear();
   register_span_handler(capture);
   NodeID root, child1, child2;
   root = pinpoint_start_trace(E_ROOT_NODE);
@@ -315,6 +316,7 @@ TEST(common, call_order) {
 
   std::string exp =
       R"({":FT":7000,"event":[{":E":0,":S":0,":depth":1,":seq":0,"name:":"child1->root"},{":E":0,":S":0,":depth":2,":seq":1,"name:":"child2->child1"},{":E":0,":S":0,":depth":2,":seq":2,"name:":"child3->child1"},{":E":0,":S":0,":depth":2,":seq":3,"name:":"child4->child1"},{":E":0,":S":0,":depth":2,":seq":4,"name:":"child5->child1"},{":E":0,":S":0,":depth":3,":seq":5,"name:":"child6->child5"}],"name:":"root"})";
+  printf("\n%s\n", span.c_str());
   EXPECT_TRUE(check_span_order(span, exp));
 }
 std::mutex cv_m;
@@ -376,5 +378,44 @@ TEST(common, sequenceId) {
   NodeID child_03 = pinpoint_start_trace(child_02);
   EXPECT_EQ(pinpoint_get_sequence_id(child_03), 2);
   pinpoint_end_trace(root);
+  EXPECT_EQ(pinpoint_get_sequence_id(child_03), -1);
   show_status();
+}
+
+static void simple_call() {
+  NodeID root = pinpoint_start_trace(E_ROOT_NODE);
+  NodeID child_01 = pinpoint_start_trace(root);
+  NodeID child_02 = pinpoint_start_trace(child_01);
+  EXPECT_EQ(pinpoint_get_sequence_id(child_01), 0);
+  EXPECT_EQ(pinpoint_get_sequence_id(child_02), 1);
+  EXPECT_EQ(pinpoint_get_sequence_id(root), 0);
+  NodeID child_03 = pinpoint_start_trace(child_02);
+  EXPECT_EQ(pinpoint_get_sequence_id(child_03), 2);
+  pinpoint_end_trace(root);
+
+  show_status();
+}
+
+TEST(common, thread) {
+  std::thread t1(simple_call);
+  std::thread t2(simple_call);
+  std::thread t3(simple_call);
+  t1.join();
+  t2.join();
+  t3.join();
+}
+
+TEST(common, async_ctx) {
+  NodeID root = pinpoint_start_trace(E_ROOT_NODE);
+  NodeID child_01 = pinpoint_start_trace(root);
+  NodeID child_02 = pinpoint_start_trace(child_01);
+  EXPECT_EQ(pinpoint_get_sequence_id(child_01), 0);
+  EXPECT_EQ(pinpoint_get_sequence_id(child_02), 1);
+  EXPECT_EQ(pinpoint_get_sequence_id(root), 0);
+  NodeID child_03 = pinpoint_start_trace(child_02);
+  EXPECT_EQ(pinpoint_get_sequence_id(child_03), 2);
+
+  pinpoint_set_async_ctx(root, 256, 0);
+  pinpoint_end_trace(root);
+  pinpoint_set_async_ctx(1024, 256, 0);
 }

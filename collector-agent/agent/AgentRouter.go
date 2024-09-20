@@ -58,7 +58,7 @@ type TSpanEvent struct {
 	ServiceType     int32           `json:"stp,string"`
 	Clues           []string        `json:"clues,omitempty"`
 	SqlMeta         *string         `json:"SQL,omitempty"`
-	AsyId           int32           `json:"asyId,omitempty"`
+	AsyId           int32           `json:"asyId,string,omitempty"`
 }
 
 func (spanEv *TSpanEvent) GetEndElapsed() int32 {

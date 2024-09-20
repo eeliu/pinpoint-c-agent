@@ -182,7 +182,7 @@ public:
         }
       }
     }
-    // it already is a full trace, every thing is done.
+    // dealloc w_trace by scope
     local_nodePool_ptr->FreeNodeTree(id);
     return E_ROOT_NODE;
   }
@@ -280,6 +280,16 @@ public:
   using SpanHandler = void (*)(const char*);
   void RegisterRawSpanHandler(SpanHandler user_handler) { rawSpanHandler_ = user_handler; }
 
+  void SetAsyncContext(NodeID id, int32_t async_node_id, int32_t node_sequence) {
+    WrapperTraceNodePtr w_node = GetWrapperTraceNode(id, E_LOC_ROOT);
+    Json::Value async_value;
+    async_value["id"] = async_node_id;
+    async_value["seq"] = node_sequence;
+    w_node->AddAnnotation("asy", async_value);
+    pp_trace("mark current node:%d as async call with async_id:%d sequence:%d", id, async_node_id,
+             node_sequence);
+  }
+
   std::string GetNodePoolStatus() { return local_nodePool_ptr->Status(); }
   void DebugNodeId(NodeID id) {
     try {
@@ -372,7 +382,7 @@ NodeID pinpoint_start_traceV1(NodeID parentId, const char* opt, ...) {
       va_list args;
       va_start(args, opt);
       NodeID child = _agentPtr->StartTrace(parentId, opt, &args);
-      pp_trace(" [%d] pinpoint_start child  [%d]", parentId, child);
+      pp_trace(" [%d] pinpoint_start child [%d] %ld", parentId, child, get_unix_time_ms());
       va_end(args);
       return child;
     } catch (const std::out_of_range& ex) {
@@ -404,7 +414,7 @@ ParentNodeId pinpoint_end_trace(NodeID id) {
   if (_agentPtr) {
     try {
       NodeID ret = _agentPtr->EndTrace(id);
-      pp_trace(" [%d] pinpoint_end_trace Done!", id);
+      pp_trace(" [%d] %ld pinpoint_end_trace Done!", id, get_unix_time_ms());
       return ret;
     } catch (const std::out_of_range& ex) {
       pp_trace("end_trace %d out_of_range exception: %s", id, ex.what());
@@ -623,6 +633,21 @@ int32_t pinpoint_get_sequence_id(NodeID node) {
                ex.what());
     } catch (const std::exception& ex) {
       pp_trace(" %s [%d] pinpoint_get_sequence: failed with %s", __func__, node, ex.what());
+    }
+  }
+  return -1;
+}
+
+void pinpoint_set_async_ctx(NodeID id, int32_t async_node_id, int32_t node_sequence) {
+  if (_agentPtr) {
+    try {
+      _agentPtr->SetAsyncContext(id, async_node_id, node_sequence);
+    } catch (const std::out_of_range& ex) {
+      pp_trace(" %s [%d] failed with %s", __func__, id, ex.what());
+    } catch (const std::runtime_error& ex) {
+      pp_trace(" %s [%d] failed with %s", __func__, id, ex.what());
+    } catch (...) {
+      pp_trace(" %s [%d] failed with unknown reason", __func__, id);
     }
   }
 }

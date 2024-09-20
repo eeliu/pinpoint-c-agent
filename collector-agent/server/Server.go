@@ -24,7 +24,6 @@ var Version = "v0.6.4"
 
 type Server struct {
 	listener        net.Listener
-	wg              sync.WaitGroup
 	agentRouter     agent.I_PacketRouter
 	createTime      int64
 	uniqueIDCounter int64
@@ -58,8 +57,14 @@ const CLIENT_HEADER_SIZE = 8
 
 func (s *Server) Run() (code int, err error) {
 
-	s.wg.Add(1)
-	go s.startListen()
+	var wg sync.WaitGroup
+	defer wg.Wait()
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		s.startListen()
+	}()
 
 	sig := make(chan os.Signal, 1)
 
@@ -69,18 +74,12 @@ func (s *Server) Run() (code int, err error) {
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
 
-	defer func() {
-		close(s.config.StatusCh)
-		if err := s.listener.Close(); err != nil {
-			s.log.Warnf("close listener socket met:%s", err)
-		}
-		s.wg.Wait()
-	}()
-
 	for {
 		select {
 		case sig := <-sig:
 			s.log.Warnf("catch signal %s", sig)
+			s.log.Warn("Stopping listener ...")
+			s.listener.Close()
 			return 0, fmt.Errorf("SpanServer exit with signal %s", sig)
 		case <-time.After(s.config.AgentRetireTime):
 			s.agentRouter.Clean()
@@ -124,10 +123,10 @@ func (s *Server) parsePacket(con net.Conn, size, packetType uint32, body []byte)
 }
 
 func (s *Server) startListen() {
-	defer s.wg.Done()
+	var wg sync.WaitGroup
 
-	s.log.Debugf("bind server on :%s", s.config.User.BindAddress)
 	socket_type, address := s.config.ParseServerAddress()
+	s.log.Debugf("bind server on %v:%s", socket_type, address)
 	listener, err := net.Listen(socket_type, address)
 	if err != nil {
 		s.log.Errorf("bind %s:%s failed with %v", socket_type, address, err)
@@ -139,15 +138,14 @@ func (s *Server) startListen() {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			select {
-			case <-s.config.StatusCh:
-				return
-			default:
-				s.log.Errorf("accepter failed with %s", err.Error())
-			}
+			s.log.Errorf("accepter failed with %s", err.Error())
+			break
 		}
-		s.wg.Add(1)
-		go s.handleClient(conn)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			s.handleClient(conn)
+		}()
 	}
 
 }
@@ -224,7 +222,6 @@ func (server *Server) genHello() *ServerInfo {
 }
 
 func (s *Server) handleClient(con net.Conn) {
-	defer s.wg.Done()
 	defer func() {
 		if err := con.Close(); err != nil {
 			s.log.Warnf("close client met :%s", err)

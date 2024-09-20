@@ -2,6 +2,8 @@ package common
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"net"
 	"os"
 	"path"
@@ -25,7 +27,12 @@ type UserSetting struct {
 	Container    bool
 	LoggerLevel  string
 	LoggerDir    string
+	LogStdout    bool
 	Profile      bool
+}
+
+func (u *UserSetting) String() string {
+	return fmt.Sprintf("{RecvBufSize:%v BindAddress:%v SpanAddress:%v AgentAddress:%v StatAddress:%v}", u.RecvBufSize, u.BindAddress, u.SpanAddress, u.AgentAddress, u.StatAddress)
 }
 
 type Config struct {
@@ -48,20 +55,19 @@ type Config struct {
 	Pid                int32
 	StartTime          int64
 	User               *UserSetting
-	StatusCh           chan bool
 }
 
 func (c *Config) ParseServerAddress() (socket_type string, address string) {
 	raw_address := c.User.BindAddress
 
-	if string(raw_address[len(address)-4:]) == "sock" {
+	if strings.HasPrefix(raw_address, "sock") {
 		// /tmp/pinpoint.sock
 		// a very loose checking
 		// assume a file
 		return "unix", address
 	} else {
 		// like 0.0.0.0:5689
-		return "tcp", strings.Replace(address, "@", ":", 1)
+		return "tcp", strings.Replace(raw_address, "@", ":", 1)
 	}
 }
 
@@ -73,7 +79,7 @@ func getHostName() string {
 	return name
 }
 
-func lookupIpFromName(name string) string {
+func lookupIpFromName() string {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err == nil {
 		defer conn.Close()
@@ -97,7 +103,7 @@ func CreateDefaultConfig() *Config {
 		StartTime:                 time.Now().Unix(),
 		Pid:                       int32(os.Getgid()),
 		HostName:                  getHostName(),
-		HostIp:                    lookupIpFromName(getHostName()),
+		HostIp:                    lookupIpFromName(),
 		Log:                       logrus.New(),
 	}
 	config.GrpcOption = append(config.GrpcOption,
@@ -135,10 +141,10 @@ func (config *Config) InitLogger() {
 		config.Log.SetLevel(level)
 	}
 
-	// if log dir exist use log file, if not keep logging to stdout
-	if _, err := os.Stat(config.User.LoggerDir); os.IsNotExist(err) {
-		config.Log.SetOutput(os.Stdout)
-	} else {
+	var log_writers []io.Writer
+
+	if _, err := os.Stat(config.User.LoggerDir); err == nil {
+
 		logFile := path.Join(config.User.LoggerDir, "collector.log")
 		// bind logger on the file
 		logger := &lumberjack.Logger{
@@ -147,17 +153,21 @@ func (config *Config) InitLogger() {
 			MaxBackups: 50,
 		}
 
-		config.Log.SetOutput(logger)
+		log_writers = append(log_writers, logger)
 	}
 
+	if config.User.LogStdout {
+		log_writers = append(log_writers, os.Stdout)
+	}
+
+	config.Log.SetOutput(io.MultiWriter(log_writers...))
+
 	config.Log.SetFormatter(&prefixed.TextFormatter{
-		DisableColors:   true,
-		TimestampFormat: "2006-01-02 15:04:05.999999999",
+		ForceColors:     true,
+		TimestampFormat: "2006-01-02 15:04:05.999",
 		FullTimestamp:   true,
 		ForceFormatting: true,
 	})
-
-	config.Log.Info(config)
 }
 
 func GetPBAgentInfo(serverType int32, config *Config) *v1.PAgentInfo {

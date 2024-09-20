@@ -109,10 +109,10 @@ public:
   int32_t depth_ = {1};
   int32_t sequence_ = {-1};
   uint64_t trace_start_time_ = {0};
-  uint64_t parent_start_time_ = {0};
+  uint64_t pre_trace_time_ = {0};
 
   // the naming from pinpoint protocol
-  uint64_t expired_time = {0};
+  int64_t expired_time_ = {-1};
   bool set_exp_ = {false};
 
 public:
@@ -186,6 +186,7 @@ public:
   void AddAnnotation(const char* key, int v) { value_[key] = v; }
 
   void AddAnnotation(const char* key, uint64_t v) { value_[key] = v; }
+  void AddAnnotation(const char* key, int64_t v) { value_[key] = v; }
 
   void AddAnnotation(const char* key, const Json::Value& v) { value_[key] = v; }
 

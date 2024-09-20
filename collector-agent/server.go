@@ -18,9 +18,10 @@ var (
 	agent_address   = flag.String("AgentAddress", "localhost:9991", "Set recv buf; eg: -AgentAddress=localhost:9991")
 	span_address    = flag.String("SpanAddress", "localhost:9991", "Set recv buf; eg: -SpanAddress=localhost:9993")
 	stat_address    = flag.String("StatAddress", "localhost:9991", "Set recv buf; eg: -StatAddress=localhost:9992")
-	bind_address    = flag.String("host", "0.0.0.0@10000", "Set collector-agent bind host and port information; eg: -host=0.0.0.0@10000")
+	bind_address    = flag.String("host", "", "server bind host and port information; eg: -host=0.0.0.0@10000")
 	in_container    = flag.Bool("container", false, "collector-agent run in a pod or PM; eg: -container=true")
 	log_dir         = flag.String("LogDir", os.TempDir(), "Set logging output directory; eg: -LogDir=/tmp")
+	log_stdout      = flag.Bool("LogStdout", true, "enable net/http/pprof")
 	log_level       = flag.String("LogLevel", "debug", "Set logging output level(debug/info/warn/error); eg: -LogLevel=info")
 	server_recv_buf = flag.Int("RecvBufSize", 4096*100, "Set recv buf; eg: -RecvBufSize=409600")
 	enable_profile  = flag.Bool("EnableProfile", false, "enable net/http/pprof")
@@ -35,6 +36,7 @@ func parseConfig() *common.Config {
 		StatAddress:  *stat_address,
 		Container:    *in_container,
 		LoggerLevel:  *log_level,
+		LogStdout:    *log_stdout,
 		LoggerDir:    *log_dir,
 		Profile:      *enable_profile,
 	}
@@ -76,6 +78,7 @@ func parseConfig() *common.Config {
 
 	config := common.CreateDefaultConfig()
 	config.User = setting
+	config.InitLogger()
 	return config
 }
 
@@ -91,9 +94,15 @@ func main() {
 		}()
 	}
 
+	if config.User.BindAddress == "" {
+		flag.Usage()
+		return
+	}
+
+	config.Log.Infof("Config:{%v}", config)
 	server := server.CreateServer(parseConfig())
 
 	if _, err := server.Run(); err != nil {
-		config.Log.Warn("SpanServer is exit ....")
+		config.Log.Warn("SpanServer is exit")
 	}
 }

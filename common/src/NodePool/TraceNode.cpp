@@ -34,9 +34,9 @@ TraceNode& TraceNode::Reset(NodeID id) {
   id_ = id;
   root_id_ = parent_id_ = next_ = E_INVALID_NODE;
 
-  parent_start_time_ = 0;
+  pre_trace_time_ = 0;
   trace_start_time_ = 0;
-  expired_time = 0;
+  expired_time_ = -1;
   reference_count_ = 0;
   root_node_extra_ptr_ = nullptr;
 
@@ -44,17 +44,19 @@ TraceNode& TraceNode::Reset(NodeID id) {
     this->user_optional_setting_func_.clear();
   }
 
+  this->value_.clear();
+  set_exp_ = false;
+
   return *this;
 }
 
 void TraceNode::StartTrace() { trace_start_time_ = get_unix_time_ms(); }
 
 void TraceNode::EndTrace() {
-  uint64_t end_time = get_unix_time_ms();
-  this->expired_time += (end_time - this->trace_start_time_);
+  expired_time_ = (get_unix_time_ms() - trace_start_time_);
 
-  this->AddAnnotation(":E", this->expired_time);
-  this->AddAnnotation(":S", this->trace_start_time_ - this->parent_start_time_);
+  this->AddAnnotation(":E", expired_time_);
+  this->AddAnnotation(":S", this->trace_start_time_ - this->pre_trace_time_);
 
   if (this->set_exp_) {
     this->AddAnnotation("EA", 1);
@@ -69,7 +71,6 @@ void TraceNode::EndTrace() {
 void TraceNode::BindParentTrace(WrapperTraceNodePtr& parent_ptr) { BindParentTrace(*parent_ptr); }
 
 void TraceNode::BindParentTrace(TraceNode& parent) {
-  parent_start_time_ = parent.trace_start_time_;
   parent_id_ = parent.id_;
   depth_ = parent.depth_ + 1;
 }
@@ -79,7 +80,7 @@ void TraceNode::parseUserOption(std::string key, std::string value) {
   if (key == "TraceMinTimeMs") {
     int64_t min = std::stoll(value);
     auto cb = [=]() -> bool {
-      if ((int64_t)this->expired_time >= min) {
+      if ((int64_t)this->expired_time_ >= min) {
         return true;
       } else {
         pp_trace("node:$d skipped due to `TraceMinTimeMs`", id_);

@@ -53,6 +53,9 @@ void PoolManager::AppendToRootTrace(WrapperTraceNodePtr& root, TraceNode& newNod
   if (last != E_INVALID_NODE) {
     WrapperTraceNodePtr lastNode = ReferNode(last);
     lastNode->next_ = newNode.id_;
+    newNode.pre_trace_time_ = lastNode->trace_start_time_;
+  } else {
+    newNode.pre_trace_time_ = root->trace_start_time_;
   }
 
   root->SetLastNode(newNode.id_);
@@ -160,14 +163,15 @@ const Json::Value& PoolManager::EncodeTraceToJsonSpan(WrapperTraceNodePtr& root_
 
   for (NodeID next = root_node->next_; next != E_INVALID_NODE;) {
     auto next_node = ReferNode(next);
-    auto parent_node = ReferNode(next_node->parent_id_);
     next = next_node->next_;
 
-    // XXX: if no expired_time, try to end it
-    if (next_node->expired_time == 0) {
+    // XXX: if not end, force end
+    if (next_node->expired_time_ == -1) {
       next_node->EndTrace();
     }
-    // [x] add skipped
+
+    // [ ] add skipped
+    // auto parent_node = ReferNode(next_node->parent_id_);
     // if (next_node->ShouldSkip() || parent_node->ShouldSkip()) {
     //   next_node->SkipByParent();
     //   continue;
