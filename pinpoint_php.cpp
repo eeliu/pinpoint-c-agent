@@ -67,7 +67,7 @@ ZEND_GET_MODULE(pinpoint_php)
 #endif
 
 ZEND_DECLARE_MODULE_GLOBALS(pinpoint_php);
-//static void pinpoint_log(char *msg);
+// static void pinpoint_log(char *msg);
 
 // clang-format off
 /* {{{ PHP_INI
@@ -138,6 +138,17 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_add_id_value, 0, 0, 1)
 ZEND_ARG_INFO(0, key)
 ZEND_ARG_INFO(0, nodeid)
 ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_get_seqid_id, 0, 0, 1)
+ZEND_ARG_INFO(0, nodeid)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_set_async_id, 0, 0, 3)
+ZEND_ARG_INFO(0, async_node)
+ZEND_ARG_INFO(0, sequence)
+ZEND_ARG_INFO(0, nodeid)
+ZEND_END_ARG_INFO()
+
 // php5 needs (0,0,0)
 ZEND_BEGIN_ARG_INFO_EX(arginfo_none, 0, 0, 0)
 ZEND_END_ARG_INFO()
@@ -153,7 +164,6 @@ const zend_function_entry pinpoint_php_functions[] = {
   PHP_FE(pinpoint_get_this, arginfo_none) 
   PHP_FE(pinpoint_get_caller_arg,arginfo_add_arg_index)
   PHP_FE(pinpoint_status, arginfo_none) 
-  // PHP__FE(pinpoint_get_func_ref_args, arginfo_none)
   PHP_FE(_pinpoint_drop_trace, arginfo_add_id) 
   PHP_FE(_pinpoint_start_time, arginfo_none)
   PHP_FE(_pinpoint_set_context, arginfo_add_id_key_value)
@@ -163,6 +173,8 @@ const zend_function_entry pinpoint_php_functions[] = {
   PHP_FE(_pinpoint_add_clue, arginfo_add_id_key_value_flag)
   PHP_FE(_pinpoint_add_clues, arginfo_add_id_key_value_flag)
   PHP_FE(_pinpoint_join_cut,arginfo_add_join_cb_cb_cb)
+  PHP_FE(_pinpoint_get_sequence_id,arginfo_get_seqid_id)
+  PHP_FE(_pinpoint_set_async_ctx,arginfo_set_async_id)
   PHP_FE_END /* Must be the last line in pinpioint_php_functions[] */
 };
 /* }}} */
@@ -1204,6 +1216,52 @@ PHP_MINIT_FUNCTION(pinpoint_php) {
 }
 /* }}} */
 
+PHP_FUNCTION(_pinpoint_get_sequence_id) {
+  NodeID id = E_ROOT_NODE;
+  long sequence = E_ROOT_NODE;
+
+#if PHP_VERSION_ID < 70000
+  long _id = -1;
+  zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &_id);
+#else
+  zend_long _id = -1;
+  zend_parse_parameters(ZEND_NUM_ARGS(), "|l", &_id);
+#endif
+  if (_id == -1) {
+    id = pinpoint_get_per_thread_id();
+    sequence = pinpoint_get_sequence_id(id);
+    RETURN_LONG((long)sequence);
+  } else {
+    id = (NodeID)_id;
+    sequence = pinpoint_get_sequence_id(id);
+    RETURN_LONG((long)sequence);
+  }
+}
+
+PHP_FUNCTION(_pinpoint_set_async_ctx) {
+  NodeID id = E_ROOT_NODE;
+
+#if PHP_VERSION_ID < 70000
+  long _id = -1;
+  long async_node_id = -1;
+  long node_sequence = -1;
+  zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lll", &_id);
+#else
+  zend_long _id = -1;
+  zend_long async_node_id = -1;
+  zend_long node_sequence = -1;
+  zend_parse_parameters(ZEND_NUM_ARGS(), "lll", &_id);
+#endif
+
+  if (_id == -1) {
+    id = pinpoint_get_per_thread_id();
+    pinpoint_set_async_ctx(id, (int32_t)async_node_id, (int32_t)node_sequence);
+  } else {
+    id = (NodeID)_id;
+    pinpoint_set_async_ctx(id, (int32_t)async_node_id, (int32_t)node_sequence);
+  }
+}
+
 /* {{{ PHP_MSHUTDOWN_FUNCTION
  */
 PHP_MSHUTDOWN_FUNCTION(pinpoint_php) {
@@ -1262,7 +1320,8 @@ PHP_RSHUTDOWN_FUNCTION(pinpoint_php) {
 PHP_MINFO_FUNCTION(pinpoint_php) {
   php_info_print_table_start();
   php_info_print_table_header(2, "pinpoint_php support", "enabled");
-  php_info_print_table_header(2, "pinpoint_php extension version", PHP_PINPOINT_PHP_VERSION);
+  php_info_print_table_header(2, "pinpoint_php extension version",
+                              PHP_PINPOINT_PHP_VERSION);
   php_info_print_table_end();
 
   //    /* Remove comments if you have entries in php.ini

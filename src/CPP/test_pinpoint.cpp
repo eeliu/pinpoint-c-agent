@@ -137,7 +137,7 @@ static void test_async() {
         local_node_id = pinpoint_end_trace(local_node_id);
       };
   // test_func is the target function
-  // while, you can use std::bind magic support any kind of function
+  // while, you can use std::bind magic supporting any kind of function
   // eg: std::bind(func,"a",3,4) ;
   // std::bind(&MyClass::print, &obj, "bbc");
   // more question: https://en.cppreference.com/w/cpp/utility/functional/bind

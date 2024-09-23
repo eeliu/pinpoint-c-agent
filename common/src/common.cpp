@@ -206,8 +206,9 @@ public:
 
     WrapperTraceNodePtr w_node = GetWrapperTraceNode(id, flag);
     w_node->AddAnnotation(key, value);
-    pp_trace(" [%d] add clue key:%s value:%s", id, key, value);
+    pp_trace(" [%d] add anno_v1 key:%s value:%s", id, key, value);
   }
+
   void AnnotateTrace_V2(NodeID id, const char* key, const char* value, E_NODE_LOC flag) {
     NotInternalKey(key);
 
@@ -218,7 +219,7 @@ public:
     ann_value += value;
 
     w_node->AppendAnnotation("anno", ann_value.c_str());
-    pp_trace(" [%d] add anno:%s:%s", id, key, value);
+    pp_trace(" [%d] add anno_v2 %s:%s", id, key, value);
   }
   void AnnotateErrorTrace(NodeID id, const char* msg, const char* error_filename,
                           uint32_t error_lineno) {
@@ -382,7 +383,7 @@ NodeID pinpoint_start_traceV1(NodeID parentId, const char* opt, ...) {
       va_list args;
       va_start(args, opt);
       NodeID child = _agentPtr->StartTrace(parentId, opt, &args);
-      pp_trace(" [%d] pinpoint_start child [%d] %ld", parentId, child, get_unix_time_ms());
+      pp_trace(" [%d] pinpoint_start child [%d]", parentId, child);
       va_end(args);
       return child;
     } catch (const std::out_of_range& ex) {
@@ -414,7 +415,7 @@ ParentNodeId pinpoint_end_trace(NodeID id) {
   if (_agentPtr) {
     try {
       NodeID ret = _agentPtr->EndTrace(id);
-      pp_trace(" [%d] %ld pinpoint_end_trace Done!", id, get_unix_time_ms());
+      pp_trace(" [%d] pinpoint_end_trace Done!", id);
       return ret;
     } catch (const std::out_of_range& ex) {
       pp_trace("end_trace %d out_of_range exception: %s", id, ex.what());
