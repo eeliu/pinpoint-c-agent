@@ -207,7 +207,7 @@ TEST(common, pinpoint_start_traceV1) {
   root = pinpoint_start_trace(E_ROOT_NODE);
   child1 = pinpoint_start_traceV1(root, "TraceMinTimeMs:23", nullptr);
   pinpoint_add_clue(child1, "name", "Take1sec", E_LOC_CURRENT);
-  sleep(1);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
   pinpoint_end_trace(child1);
   check_trace_limit(-1);
   check_trace_limit(0);
@@ -219,7 +219,7 @@ TEST(common, pinpoint_start_traceV1) {
 
   child1 = pinpoint_start_traceV1(root, "TraceMinTimeMs:2000", nullptr);
   pinpoint_add_clue(child1, "name", "TraceMinTimeMs:2000", E_LOC_CURRENT);
-  sleep(1);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
 
   // [ ] optional setting not ready
   // {
@@ -357,7 +357,7 @@ TEST(common, multipleThread) {
     threads.push_back(std::thread(func));
   }
 
-  sleep(2);
+  std::this_thread::sleep_for(std::chrono::seconds(2));
   cv.notify_all();
 
   for (int i = 0; i < 10; i++) {
