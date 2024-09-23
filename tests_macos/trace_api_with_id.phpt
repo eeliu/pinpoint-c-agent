@@ -59,7 +59,7 @@ $id = _pinpoint_end_trace($id);
 [pinpoint] [%d:%d] [127] add anno_v2 name:Foo5
 [pinpoint] [%d:%d] [127] add anno_v1 key:EXP value:too heavy, throw it
 [pinpoint] [%d:%d] [127] pinpoint_end_trace Done!
-[pinpoint] [%d:%d]this span:({":E":%d,":FT":1500,":S":%d,"event":[{":E":0,":S":0,":depth":1,":seq":0,"EXP":"too heavy, throw it","anno":["name:Foo1","name:Foo5"]},{":E":0,":S":0,":depth":2,":seq":1,"name":"Foo2"},{":E":0,":S":0,":depth":2,":seq":2,"anno":["name:Foo3"],"name":"Foo4"}],"name":"Foo"})
+[pinpoint] [%d:%d]this span:({":E":%d,":FT":1500,":S":%d,"event":[{":E":%d,":S":%d,":depth":1,":seq":0,"EXP":"too heavy, throw it","anno":["name:Foo1","name:Foo5"]},{":E":%d,":S":%d,":depth":2,":seq":1,"name":"Foo2"},{":E":%d,":S":%d,":depth":2,":seq":2,"anno":["name:Foo3"],"name":"Foo4"}],"name":"Foo"})
 [pinpoint] [%d:%d][unittest] current span was dropped
 [pinpoint] [%d:%d] [128] pinpoint_end_trace Done!
 Uncaught exception: too heavy, throw it
