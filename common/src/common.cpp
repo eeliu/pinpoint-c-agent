@@ -102,9 +102,9 @@ private:
     }
   }
 
-  void HandleHelloMsg(int type, const char* buf, size_t len) {
+  int HandleHelloMsg(int type, const char* buf, size_t len) {
     if (statePtr_->IsReady()) {
-      return;
+      return 0;
     }
 
     Json::Value root;
@@ -119,16 +119,18 @@ private:
 
     if (root["version"] || root["version"].isString()) {
       std::string version = root["version"].asString();
-      std::string lowest_version = "v0.5.0";
+      std::string lowest_version = "v0.6.0";
+      pp_trace("collector information: version:%s", version.c_str());
       if (version < lowest_version) {
         pp_trace("collector-agent should be >=v0.5.0, please upgrade it");
-        return;
+        return -1;
       }
     }
 
     if (root["time"] && root["time"].isString()) {
       statePtr_->SetStartTime(std::stoll(root["time"].asString()));
     }
+    return 0;
   }
 
 public:

@@ -267,9 +267,9 @@ static void removeKeys(Json::Value& v) {
       v.removeMember(*iter);
     }
 
-    if (*iter == "calls") {
+    if (*iter == "event") {
       for (long i = 0; i < v[*iter].size(); i++) {
-        removeKeys(v["calls"][(int)i]);
+        removeKeys(v["event"][(int)i]);
       }
     }
   }

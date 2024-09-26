@@ -219,17 +219,17 @@ size_t TransLayer::PoolEventOnce(uint32_t timeout) {
       goto ERR_NETWORK;
     }
 
-    if ((this->_state & S_WRITING) && FD_ISSET(fd, &wfds)) {
-      pp_trace("write event");
-      if (_send_msg_to_collector() == -1) {
-        goto ERR_NETWORK;
-      }
-    }
-
     if ((this->_state & S_READING) && FD_ISSET(fd, &rfds)) {
       pp_trace("read event");
       if (recvByteStream() == -1) {
         pp_trace("recv_msg_from_collector error");
+        goto ERR_NETWORK;
+      }
+    }
+
+    if ((this->_state & S_WRITING) && FD_ISSET(fd, &wfds)) {
+      pp_trace("write event");
+      if (_send_msg_to_collector() == -1) {
         goto ERR_NETWORK;
       }
     }

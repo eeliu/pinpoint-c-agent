@@ -169,19 +169,19 @@ func (spanSender *SpanSender) createPinpointSpanEv(spanEv *TSpanEvent) *v1.PSpan
 		pbSpanEv.ExceptionInfo.StringValue = &stringValue
 	}
 
-	if spanEv.NextSpanId > 0 {
-		nextEv := &v1.PMessageEvent{}
-		nextEv.DestinationId = spanEv.DestinationId
-		nextEv.NextSpanId = spanEv.NextSpanId
-		nextEv.EndPoint = spanEv.EndPoint
-		pbSpanEv.NextEvent = &v1.PNextEvent{
-			Field: &v1.PNextEvent_MessageEvent{
-				MessageEvent: nextEv,
-			},
-		}
+	nextEv := &v1.PMessageEvent{
+		DestinationId: spanEv.DestinationId,
+		NextSpanId:    spanEv.NextSpanId,
+		EndPoint:      spanEv.EndPoint,
 	}
 
-	for _, ann := range spanEv.Clues {
+	pbSpanEv.NextEvent = &v1.PNextEvent{
+		Field: &v1.PNextEvent_MessageEvent{
+			MessageEvent: nextEv,
+		},
+	}
+
+	for _, ann := range spanEv.Annotations {
 		iColon := strings.Index(ann, ":")
 		if value, err := strconv.ParseInt(ann[0:iColon], 10, 32); err == nil {
 			stringValue := v1.PAnnotationValue_StringValue{StringValue: ann[iColon+1:]}

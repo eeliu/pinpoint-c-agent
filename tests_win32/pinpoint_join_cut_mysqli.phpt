@@ -4,6 +4,8 @@ pinpoint_php pinpoint_join_cut_redis
 <?php
 if (!extension_loaded("pinpoint_php"))
   print "skip";
+if (!extension_loaded("mysqli"))
+  print "skip";
 if(getenv('SKIP_MACOS_ACTION', true)){
   print "skip";
 }  

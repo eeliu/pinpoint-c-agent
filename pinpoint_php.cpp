@@ -160,6 +160,7 @@ ZEND_END_ARG_INFO()
 const zend_function_entry pinpoint_php_functions[] = {
   PHP_FE(_pinpoint_start_trace, arginfo_add_id) 
   PHP_FE(_pinpoint_end_trace, arginfo_add_id)
+  PHP_FE(_pinpoint_is_root_trace, arginfo_add_id)
   PHP_FE(_pinpoint_unique_id, arginfo_none) 
   PHP_FE(pinpoint_get_this, arginfo_none) 
   PHP_FE(pinpoint_get_caller_arg,arginfo_add_arg_index)
@@ -233,6 +234,28 @@ PHP_FUNCTION(_pinpoint_drop_trace) {
   }
   change_trace_status(id, E_TRACE_BLOCK);
   RETURN_TRUE;
+}
+
+PHP_FUNCTION(_pinpoint_is_root_trace) {
+  NodeID id = E_INVALID_NODE;
+
+#if PHP_VERSION_ID < 70000
+  long _id = -1;
+  zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &_id);
+#else
+  zend_long _id = -1;
+  zend_parse_parameters(ZEND_NUM_ARGS(), "|l", &_id);
+#endif
+  if (_id == -1) {
+    id = pinpoint_get_per_thread_id();
+  } else {
+    id = (NodeID)_id;
+  }
+  if (pinpoint_trace_is_root(id) == 1) {
+    RETURN_TRUE;
+  } else {
+    RETURN_FALSE;
+  }
 }
 
 PHP_FUNCTION(pinpoint_get_this) {
@@ -783,9 +806,9 @@ static void replace_ex_caller_parameters(zval *argv) {
   uint32_t size = zend_array_count(Z_ARRVAL_P(argv));
   pp_trace("argv size:%d", size);
   uint32_t param_count = ZEND_CALL_NUM_ARGS(EG(current_execute_data));
-  if (size != param_count) {
+  if (size < param_count) {
     pp_trace(
-        "error: replace_ex_caller_parameters return `size` does not matched");
+        "error: replace_ex_caller_parameters return `size` does not match");
     return;
   }
 
@@ -793,12 +816,11 @@ static void replace_ex_caller_parameters(zval *argv) {
   zval *ex_param_ptr = ZEND_CALL_ARG(EG(current_execute_data), 1);
 
   // check old and new
-  while (i < size) {
+  while (i < param_count) {
     zval *val = zend_array_index(argv, i + 1);
     if (Z_TYPE_P(ex_param_ptr) != Z_TYPE_P(val)) {
       pp_trace("error: replace_ex_caller_parameters return `type` does not "
-               "matched "
-               "expected:%d give:%d",
+               "match expected:%d give:%d",
                Z_TYPE_P(ex_param_ptr), Z_TYPE_P(val));
       return;
     }
@@ -808,7 +830,7 @@ static void replace_ex_caller_parameters(zval *argv) {
 
   i = 0;
   ex_param_ptr = ZEND_CALL_ARG(EG(current_execute_data), 1);
-  while (i < size) {
+  while (i < param_count) {
     zval *val = zend_array_index(argv, i + 1);
 
     if (Z_TYPE_P(val) == IS_ARRAY) {

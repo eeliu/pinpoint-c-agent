@@ -56,7 +56,7 @@ type TSpanEvent struct {
 	StartElapsedV2  int32           `json:":S"`
 	EndElapsedV2    int32           `json:":E"`
 	ServiceType     int32           `json:"stp,string"`
-	Clues           []string        `json:"clues,omitempty"`
+	Annotations     []string        `json:"anno,omitempty"`
 	SqlMeta         *string         `json:"SQL,omitempty"`
 	AsyId           int32           `json:"asyId,string,omitempty"`
 }
