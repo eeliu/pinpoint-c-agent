@@ -160,7 +160,7 @@ ZEND_END_ARG_INFO()
 const zend_function_entry pinpoint_php_functions[] = {
   PHP_FE(_pinpoint_start_trace, arginfo_add_id) 
   PHP_FE(_pinpoint_end_trace, arginfo_add_id)
-  PHP_FE(_pinpoint_is_root_trace, arginfo_add_id)
+  PHP_FE(_pinpoint_get_trace_depth, arginfo_add_id)
   PHP_FE(_pinpoint_unique_id, arginfo_none) 
   PHP_FE(pinpoint_get_this, arginfo_none) 
   PHP_FE(pinpoint_get_caller_arg,arginfo_add_arg_index)
@@ -236,7 +236,7 @@ PHP_FUNCTION(_pinpoint_drop_trace) {
   RETURN_TRUE;
 }
 
-PHP_FUNCTION(_pinpoint_is_root_trace) {
+PHP_FUNCTION(_pinpoint_get_trace_depth) {
   NodeID id = E_INVALID_NODE;
 
 #if PHP_VERSION_ID < 70000
@@ -251,11 +251,7 @@ PHP_FUNCTION(_pinpoint_is_root_trace) {
   } else {
     id = (NodeID)_id;
   }
-  if (pinpoint_trace_is_root(id) == 1) {
-    RETURN_TRUE;
-  } else {
-    RETURN_FALSE;
-  }
+  RETURN_LONG(pinpoint_get_depth(id));
 }
 
 PHP_FUNCTION(pinpoint_get_this) {
@@ -1267,12 +1263,14 @@ PHP_FUNCTION(_pinpoint_set_async_ctx) {
   long _id = -1;
   long async_node_id = -1;
   long node_sequence = -1;
-  zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lll", &_id);
+  zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lll", &_id, &async_node_id,
+                        &node_sequence);
 #else
   zend_long _id = -1;
   zend_long async_node_id = -1;
   zend_long node_sequence = -1;
-  zend_parse_parameters(ZEND_NUM_ARGS(), "lll", &_id);
+  zend_parse_parameters(ZEND_NUM_ARGS(), "lll", &_id, &async_node_id,
+                        &node_sequence);
 #endif
 
   if (_id == -1) {

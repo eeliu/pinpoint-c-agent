@@ -27,17 +27,20 @@ TEST(common, uid_all_in_one) {
 
 TEST(common, start_end_trace) {
   register_span_handler(cc_log_error_cb);
+  EXPECT_EQ(pinpoint_get_depth(E_ROOT_NODE), -1);
   NodeID id = pinpoint_start_trace(E_ROOT_NODE);
+  EXPECT_EQ(pinpoint_get_depth(id), 0);
   change_trace_status(id, E_OFFLINE);
   EXPECT_EQ(pinpoint_trace_is_root(id), 1);
   id = pinpoint_start_trace(id);
+  EXPECT_EQ(pinpoint_get_depth(id), 1);
   EXPECT_EQ(pinpoint_trace_is_root(id), 0);
   change_trace_status(id, E_OFFLINE);
   EXPECT_EQ(pinpoint_trace_is_root(NodeID(-1023)), -1);
   EXPECT_EQ(pinpoint_trace_is_root(NodeID(1023)), -1);
   EXPECT_EQ(pinpoint_trace_is_root(NodeID(0)), -1);
   id = pinpoint_start_trace(id);
-
+  EXPECT_EQ(pinpoint_get_depth(id), 2);
   change_trace_status(id, E_TRACE_PASS);
   catch_error(id, "sdfasfas", "fsafdsfasd", 234);
   id = pinpoint_end_trace(id);

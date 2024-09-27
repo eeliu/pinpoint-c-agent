@@ -192,6 +192,14 @@ void pinpoint_set_async_ctx(NodeID id, int32_t async_node_id, int32_t node_seque
 int32_t pinpoint_get_sequence_id(NodeID id);
 
 /**
+ * @brief get depth for trace node
+ *
+ * @param id
+ * @return int32_t (-1: not a live trace node; 0 root trace; >0 it's depth)
+ */
+int32_t pinpoint_get_depth(NodeID id);
+
+/**
  * @brief get string context
  *
  * @param id current trace id

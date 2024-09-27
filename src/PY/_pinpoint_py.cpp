@@ -205,7 +205,7 @@ static PyObject *py_is_root_trace(PyObject *self, PyObject *args) {
     id = pinpoint_get_per_thread_id();
   }
   int ret = pinpoint_trace_is_root(id);
-  if (ret != -1) {
+  if (ret == 1) {
     return Py_BuildValue("O", Py_True);
   } else {
     return Py_BuildValue("O", Py_False);
@@ -213,7 +213,19 @@ static PyObject *py_is_root_trace(PyObject *self, PyObject *args) {
 }
 
 static PyObject *py_trace_has_root(PyObject *self, PyObject *args) {
-  return py_is_root_trace(self, args);
+  int id = -1;
+  if (!PyArg_ParseTuple(args, "|i", &id)) {
+    return Py_BuildValue("O", Py_False);
+  }
+  if (id == E_INVALID_NODE) {
+    id = pinpoint_get_per_thread_id();
+  }
+  int ret = pinpoint_trace_is_root(id);
+  if (ret != -1) {
+    return Py_BuildValue("O", Py_True);
+  } else {
+    return Py_BuildValue("O", Py_False);
+  }
 }
 
 static PyObject *py_pinpoint_drop_trace(PyObject *self, PyObject *args) {

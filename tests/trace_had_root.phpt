@@ -10,17 +10,17 @@ pinpoint_php.DebugReport=true
 
 --FILE--
 <?php
-if (!_pinpoint_is_root_trace()){
+if (_pinpoint_get_trace_depth() == -1){
     echo "case not trace pass \n";
 }
 
 _pinpoint_start_trace();
-if (_pinpoint_is_root_trace()){
+if (_pinpoint_get_trace_depth() == 0){
     echo "case root trace pass \n";
 }
 
 _pinpoint_start_trace();
-if (!_pinpoint_is_root_trace()){
+if (_pinpoint_get_trace_depth()== 1){
     echo "case sub trace pass \n";
 }
 _pinpoint_end_trace();

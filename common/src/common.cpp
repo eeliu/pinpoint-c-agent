@@ -194,6 +194,11 @@ public:
     return w_node->IsRootNode();
   }
 
+  int32_t GetDepth(NodeID id) {
+    WrapperTraceNodePtr w_node = local_nodePool_ptr->ReferNode(id);
+    return w_node->depth_;
+  }
+
   uint64_t ChangeTraceStatus(NodeID id, int status) {
     WrapperTraceNodePtr w_node = local_nodePool_ptr->ReferNode(id);
     WrapperTraceNodePtr w_root = local_nodePool_ptr->ReferNode(w_node->root_id_);
@@ -437,6 +442,22 @@ int pinpoint_trace_is_root(NodeID id) {
         return -1;
       }
       return _agentPtr->IsRootTrace(id) ? (1) : (0);
+    } catch (const std::out_of_range&) {
+      pp_trace("not found node=%d ", id);
+    } catch (const std::exception& ex) {
+      pp_trace(" node=%d end trace failed: %s", id, ex.what());
+    }
+  }
+  return -1;
+}
+
+int32_t pinpoint_get_depth(NodeID id) {
+  if (_agentPtr) {
+    try {
+      if (id == E_ROOT_NODE) {
+        return -1;
+      }
+      return _agentPtr->GetDepth(id);
     } catch (const std::out_of_range&) {
       pp_trace("not found node=%d ", id);
     } catch (const std::exception& ex) {

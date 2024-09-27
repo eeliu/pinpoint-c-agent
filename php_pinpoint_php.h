@@ -97,7 +97,7 @@ PHP_FUNCTION(pinpoint_status);
 PHP_FUNCTION(_pinpoint_get_sequence_id);
 PHP_FUNCTION(_pinpoint_set_async_ctx);
 PHP_FUNCTION(_pinpoint_join_cut);
-PHP_FUNCTION(_pinpoint_is_root_trace);
+PHP_FUNCTION(_pinpoint_get_trace_depth);
 
 PHP_MINIT_FUNCTION(pinpoint_php);
 PHP_MSHUTDOWN_FUNCTION(pinpoint_php);
