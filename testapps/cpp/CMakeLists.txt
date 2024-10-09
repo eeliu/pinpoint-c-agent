@@ -5,21 +5,11 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(FetchContent)
-# FetchContent_Declare(
-#   pinpoint
-#   GIT_REPOSITORY https://github.com/pinpoint-apm/pinpoint-c-agent.git
-#   # GIT_TAG        74bc39d813d664cb56b78b1506d91932c8131396 
-#   # not recommended, please use hash key like `74bc39d813d664cb56b78b1506d91932c8131396`or tag name
-#   GIT_TAG        v0.5.0
-# )
 
-FetchContent_Declare(pinpoint SOURCE_DIR ${PROJECT_SOURCE_DIR}/../../)
-
-FetchContent_GetProperties(pinpoint)
-if (NOT pinpoint_POPULATED)
-    FetchContent_Populate(pinpoint)
-    add_subdirectory(${pinpoint_SOURCE_DIR}/common ${pinpoint_BINARY_DIR})
-endif ()
+FetchContent_Declare(
+  pinpoint 
+  URL https://github.com/eeliu/pinpoint-c-agent/releases/download/v0.2.33/pinpoint-common.tar.gz
+)
 
 FetchContent_Declare(
   httplib
