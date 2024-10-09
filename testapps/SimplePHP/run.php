@@ -241,14 +241,14 @@ function produce_msg_kafka()
 
 function main()
 {
-    // call_mysql();
-    // call_mysqli();
-    // call_mariadb();
-    // call_mongodb();
-    // call_curl();
-    // call_redis();
-    // call_memcached();
-    // call_apc();
+    call_mysql();
+    call_mysqli();
+    call_mariadb();
+    call_mongodb();
+    call_curl();
+    call_redis();
+    call_memcached();
+    call_apc();
     produce_msg_kafka();
 }
 

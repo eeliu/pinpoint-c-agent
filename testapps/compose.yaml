@@ -290,6 +290,8 @@ services:
         condition: service_healthy
       dev-collector:
         condition: service_started
+      dev-kafka:
+        condition: service_started
 
     restart: always
     build:
