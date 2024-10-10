@@ -10,7 +10,7 @@ permissions:
 
 env:
   REGISTRY_IMAGE: ghcr.io/${{ github.repository }}/collector-agent
-  TAG_NAME: ${{ github.head_ref || github.ref_name }} 
+  TAG_NAME: v0.7
 
 jobs:
   collector-agent:
@@ -58,12 +58,11 @@ jobs:
         with:
           context: collector-agent
           platforms: ${{ matrix.platform }}
-          # tags: |
-          #   ghcr.io/${{ github.repository }}/collector-agent:${{ inputs.tag }}
-          #   ghcr.io/${{ github.repository }}/collector-agent:latest
+          tags: |
+            ghcr.io/${{ github.repository }}/collector-agent:${{ env.TAG_NAME }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          # labels: ${{ steps.meta.outputs.labels }}
+          # outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest
         run: |
@@ -132,7 +131,7 @@ jobs:
       id: release-ca
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        goversion: "https://dl.google.com/go/go1.18.10.linux-amd64.tar.gz"
+        goversion: 1.19
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
         project_path: "collector-agent"
