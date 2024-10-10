@@ -39,7 +39,7 @@ pinpoint-collector的桥接模块
 #### 例子:
 
 ```sh
-docker run -itd -p 9999:9999  --env-file ./env.list ghcr.io/pinpoint-apm/pinpoint-c-agent/collector-agent:latest
+docker run -itd -p 9999:9999  --env-file ./env.list ghcr.io/pinpoint-apm/pinpoint-c-agent/collector-agent:0.7
 ```
 
 ### 3. K8S 中以sidecar 模式运行
@@ -47,7 +47,7 @@ docker run -itd -p 9999:9999  --env-file ./env.list ghcr.io/pinpoint-apm/pinpoin
 server.yaml sample
 
 ``` yml
-- image: ghcr.io/pinpoint-apm/pinpoint-c-agent/collector-agent:v0.6.4
+- image: ghcr.io/pinpoint-apm/pinpoint-c-agent/collector-agent:0.7
         name: collector-agent
         args: ["-RecvBufSize=1048576"]
         securityContext:
