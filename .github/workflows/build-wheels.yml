@@ -118,7 +118,7 @@ jobs:
           CIBW_ARCHS_WINDOWS: ARM64 AMD64 x86
           CIBW_ARCHS_MACOS: auto x86_64 arm64
 
-      - uses: actions/@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: pypi
           path: ./wheelhouse/*
