@@ -21,7 +21,7 @@ jobs:
     if: ${{ inputs.release-testpypi }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
+        os: [windows-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -135,6 +135,7 @@ jobs:
       - name: show all artifact
         run: |
           ls -R ./wheelhouse/
+          exit 0
 
       - name: Publish package to pypitest
         uses: pypa/gh-action-pypi-publish@release/v1
